@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule - Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">The Bioinformatics Platform - KAUST</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html" class="active">Schedule</a></li>
+                <li><a href="labs.html">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Workshop Schedule</h1>
+        <p>February 8-10, 2026 | Daily sessions: 9:00-12:15 and 13:30-17:00</p>
+
+        <div class="day-tabs">
+            <a href="#day1" class="day-tab active" onclick="showDay(1)">Day 1 - Sun</a>
+            <a href="#day2" class="day-tab" onclick="showDay(2)">Day 2 - Mon</a>
+            <a href="#day3" class="day-tab" onclick="showDay(3)">Day 3 - Tue</a>
+        </div>
+
+        <!-- Day 1 -->
+        <section id="day1" class="day-content">
+            <h2>Day 1: Foundations of Bioinformatics &amp; Computing</h2>
+            <p><strong>Objectives:</strong> Understand the scope and applications of bioinformatics, navigate the Linux command line, identify sequencing technologies, and interpret common genomic file formats.</p>
+
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Session</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>09:00-10:15</td>
+                        <td class="session-type">
+                            <strong>S1: Introduction to Bioinformatics</strong>
+                            <p>Discover what bioinformatics is and why it has become one of the most in-demand skills in modern biology. See how computational thinking is transforming the way we understand life.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="session-type">
+                            <strong>S2: Bioinformatics Concepts</strong>
+                            <p>Build the mental toolkit every bioinformatician needs &ndash; from programming fundamentals and data management to statistical thinking and reproducible research.</p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>10:15-10:30</td>
+                        <td>Coffee Break</td>
+                    </tr>
+                    <tr>
+                        <td>10:30-11:00</td>
+                        <td class="session-type">
+                            <strong>S3: Bioinformatics Applications</strong>
+                            <p>Explore the incredible breadth of bioinformatics &ndash; from genomics and transcriptomics to proteomics and metagenomics. See how these fields are driving breakthroughs in medicine, agriculture, and environmental science.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>11:00-12:15</td>
+                        <td class="session-type">
+                            <strong>S4: Sequencing Technologies</strong>
+                            <p>Journey through the evolution of DNA sequencing &ndash; from Sanger to Illumina short-reads to the long-read revolution of PacBio and Nanopore. Understand which technology to choose for your research question.</p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>12:15-13:30</td>
+                        <td>Lunch Break</td>
+                    </tr>
+                    <tr>
+                        <td>13:30-14:30</td>
+                        <td class="session-type">
+                            <strong>S5: Linux Command Line</strong>
+                            <p>Unlock the power of the terminal &ndash; the essential interface for every bioinformatician. Learn to navigate, manipulate files, and harness the full potential of the Ibex HPC cluster.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td></td>
+                        <td class="session-type">
+                            <strong>L1: Linux Basics Hands-on</strong>
+                            <p>Put your new skills to the test! Connect to Ibex and practice real commands in a guided terminal session.<br>
+                            <a href="lab1.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>14:30-14:45</td>
+                        <td>Coffee Break</td>
+                    </tr>
+                    <tr>
+                        <td>14:45-15:30</td>
+                        <td class="session-type">
+                            <strong>S6: Genomic File Formats</strong>
+                            <p>Master the language of genomic data. Learn the structure and conventions behind FASTA, FASTQ, BAM/SAM, VCF, GTF/GFF, and BED &ndash; the formats you will encounter in every bioinformatics project.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td>15:30-16:30</td>
+                        <td class="session-type">
+                            <strong>L2: Explore Genomic File Formats</strong>
+                            <p>Get hands-on with real genomic files using seqkit, samtools, and bedtools. Inspect, query, and understand the data that powers modern biology.<br>
+                            <a href="lab2.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>16:30-17:00</td>
+                        <td class="session-type">
+                            <strong>Q&amp;A</strong>
+                            <p>Bring your questions, share your insights, and wrap up an exciting first day of discovery.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Day 2 -->
+        <section id="day2" class="day-content" style="display: none;">
+            <h2>Day 2: Data Access, Quality Control &amp; Processing</h2>
+            <p><strong>Objectives:</strong> Access and download data from public repositories, perform quality evaluation and control, understand and execute read alignment, and run pairwise alignment with BLAST.</p>
+
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Session</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>09:00-10:15</td>
+                        <td class="session-type">
+                            <strong>S1: Public Data Repositories</strong>
+                            <p>Tap into the world's largest collections of biological data. Learn to navigate NCBI SRA, GEO, Ensembl, and other repositories that give you free access to millions of experiments.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td></td>
+                        <td class="session-type">
+                            <strong>L3: Data Retrieval Hands-on</strong>
+                            <p>Download real sequencing data and reference genomes using professional command-line tools &ndash; the same workflow used by researchers worldwide.<br>
+                            <a href="lab3.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>10:15-10:30</td>
+                        <td>Coffee Break</td>
+                    </tr>
+                    <tr>
+                        <td>10:30-11:00</td>
+                        <td class="session-type">
+                            <strong>S2: Analysis Pipeline Steps</strong>
+                            <p>See the big picture. Walk through a complete bioinformatics workflow &ndash; from raw reads to biological insight &ndash; and understand how each step connects to the next.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>11:00-12:15</td>
+                        <td class="session-type">
+                            <strong>S3: Data Quality Control</strong>
+                            <p>Great analysis starts with great data. Learn to spot problems early by understanding Phred scores, adapter contamination, GC bias, and duplication &ndash; before they derail your results.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td></td>
+                        <td class="session-type">
+                            <strong>L4: FastQC &amp; Trimming Hands-on</strong>
+                            <p>Run FastQC and fastp on real data, trim away low-quality reads, and see the dramatic difference quality control makes.<br>
+                            <a href="lab4.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>12:15-13:30</td>
+                        <td>Lunch Break</td>
+                    </tr>
+                    <tr>
+                        <td>13:30-14:30</td>
+                        <td class="session-type">
+                            <strong>S4: Sequence Alignment Fundamentals</strong>
+                            <p>Understand how millions of short reads find their home on a reference genome. Dive into the algorithms behind splice-aware alignment and learn what mapping quality really means.</p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>14:30-14:45</td>
+                        <td>Coffee Break</td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td>14:45-15:30</td>
+                        <td class="session-type">
+                            <strong>L5: Reference Genome Alignment Hands-on</strong>
+                            <p>Align reads to a reference genome and evaluate the results with samtools &ndash; a core skill for any genomics project.<br>
+                            <a href="lab5.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>15:30-16:30</td>
+                        <td class="session-type">
+                            <strong>S5: Pairwise Alignment &amp; BLAST</strong>
+                            <p>Learn the foundational concepts of sequence comparison and harness the power of BLAST &ndash; the most widely used tool in all of bioinformatics.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session"> 
+                        <td></td>
+                        <td class="session-type">
+                            <strong>L6: BLAST Hands-on</strong>
+                            <p>Run BLAST searches against local databases and learn to interpret E-values, alignment scores, and percent identity like a pro.<br>
+                            <a href="lab6.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>16:30-17:00</td>
+                        <td class="session-type">
+                            <strong>Q&amp;A</strong>
+                            <p>Reflect on the day's progress, ask questions, and get ready for the final day of the workshop.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Day 3 -->
+        <section id="day3" class="day-content" style="display: none;">
+            <h2>Day 3: Reporting &amp; Capstone Project</h2>
+            <p><strong>Objectives:</strong> Learn data visualization techniques, generate aggregated QC reports with MultiQC, and complete a capstone variant discovery project.</p>
+
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Session</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>09:00-10:15</td>
+                        <td class="session-type">
+                            <strong>S1: Data Visualization</strong>
+                            <p>Transform raw numbers into compelling stories. Learn to create publication-quality figures with Python and seaborn in Jupyter notebooks &ndash; a skill that sets great scientists apart.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td></td>
+                        <td class="session-type">
+                            <strong>L7: Jupyter Visualization Hands-on</strong>
+                            <p>Build beautiful, informative plots from genomic data using Python, seaborn, and Jupyter &ndash; all within an interactive notebook environment.<br>
+                            <a href="lab7.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>10:15-10:30</td>
+                        <td>Coffee Break</td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td>10:30-11:00</td>
+                        <td class="session-type">
+                            <strong>L8: MultiQC &amp; Report Interpretation</strong>
+                            <p>Combine all your QC results into one stunning interactive report with MultiQC. Learn to quickly identify trends and outliers across dozens of samples.<br>
+                            <a href="lab8.html">View Lab Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>11:00-12:15</td>
+                        <td class="session-type">
+                            <strong>S2: Capstone Project Overview</strong>
+                            <p>Time to bring everything together! Get your project brief, form teams, and prepare to tackle a real-world variant discovery challenge in cancer genomics.</p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>12:15-13:30</td>
+                        <td>Lunch Break</td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td>13:30-14:30</td>
+                        <td class="session-type">
+                            <strong>Capstone Task 1-2: Setup &amp; Data Acquisition</strong>
+                            <p>Set up your project workspace, download cancer genomics data, and prepare your samples &ndash; just like a real research project begins.<br>
+                            <a href="lab9-capstone.html">View Capstone Instructions &rarr;</a></p>
+                        </td>
+                    </tr>
+                    <tr style="background:#f0f8ff;">
+                        <td>14:30-14:45</td>
+                        <td>Coffee Break</td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td>14:45-15:30</td>
+                        <td class="session-type">
+                            <strong>Capstone Task 3: Processing &amp; QC</strong>
+                            <p>Run the full analysis pipeline on your cancer genomics data &ndash; QC, trimming, alignment, and BAM preparation. Watch the pieces fall into place.</p>
+                        </td>
+                    </tr>
+                    <tr class="lab-session">
+                        <td>15:30-16:30</td>
+                        <td class="session-type">
+                            <strong>Capstone Task 4: IGV Visualization &amp; Wrap-up</strong>
+                            <p>The moment of truth &ndash; load your aligned reads into IGV, navigate to a gene of interest, and visually identify a genomic variant. Document your findings like a published researcher.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>16:30-17:00</td>
+                        <td class="session-type">
+                            <strong>Q&amp;A &amp; Closing</strong>
+                            <p>Celebrate your accomplishments, ask final questions, and take away the confidence and skills to continue your bioinformatics journey.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        function showDay(day) {
+            document.querySelectorAll('.day-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.day-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('day' + day).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        window.addEventListener('load', function() {
+            const hash = window.location.hash;
+            if (hash) {
+                const dayNum = hash.replace('#day', '');
+                if (['1', '2', '3'].includes(dayNum)) {
+                    showDay(parseInt(dayNum));
+                }
+            }
+        });
+    </script>
+</body>
+</html>

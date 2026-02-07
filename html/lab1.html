@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 1: Linux Basics - Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">The Bioinformatics Platform - KAUST</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Lab 1: Linux Basics</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Navigate the Linux file system confidently</li>
+                <li>Perform basic file operations on Ibex</li>
+                <li>Understand HPC concepts and the module system</li>
+                <li>Combine commands using pipes and redirection</li>
+            </ul>
+        </div>
+
+        <!-- ============================== -->
+        <!-- Part 1: Getting Started on Ibex -->
+        <!-- ============================== -->
+        <section id="part1">
+            <h2>Part 1: Log in to Ibex</h2>
+            <p>Before we begin, make sure you have completed the <a href="setup.html">Environment Setup</a>. All work in this lab is performed on the KAUST Ibex HPC cluster.</p>
+
+            <div class="step" data-step="1">
+                <h3>Connect to Ibex via SSH</h3>
+                <pre><code># Open your terminal and connect to Ibex
+ssh username@ilogin.ibex.kaust.edu.sa
+
+# Replace "username" with your actual Ibex username
+# Enter your password when prompted</code></pre>
+            </div>
+
+            
+            <div class="step" data-step="2">
+                <h3>Create Your Workshop Workspace</h3>
+                <pre><code># Create a directory for today's lab
+mkdir -p ~/workshop/day1
+cd ~/workshop/day1
+
+# Confirm your location
+pwd</code></pre>
+            </div>
+        </section>
+
+        <!-- ================================== -->
+        <!-- Part 2: Linux Navigation Practice  -->
+        <!-- ================================== -->
+        <section id="linux-nav">
+            <h2>Part 2: Linux Navigation Practice</h2>
+            <p>This section covers essential Linux commands you will use every day in bioinformatics. Practice each command carefully.</p>
+
+            <div class="step" data-step="3">
+                <h3>Know Where You Are: <code>pwd</code> and <code>ls</code></h3>
+                <pre><code># Print your current working directory
+pwd
+
+# List files in the current directory
+ls
+
+# List with details (permissions, size, date)
+ls -l
+
+# List all files including hidden ones
+ls -la
+
+# List with human-readable file sizes
+ls -lh</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Read the manual <code>man</code></h3>
+                <pre><code># Print the help page of a command
+
+# Get help for <code>pwd</code> command
+man pwd
+
+# Get help for <code>ls</code> command
+man ls</code></pre>
+            </div>
+            <div class="step" data-step="5">
+                <h3>Move Around: <code>cd</code></h3>
+                <pre><code># Go to your home directory
+cd ~
+
+# Go to the workshop directory
+cd ~/workshop/day1
+
+# Go up one directory level
+cd ..
+
+# Go back to the previous directory
+cd -
+
+# Return to day1
+cd ~/workshop/day1</code></pre>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Create a Practice Directory Structure</h3>
+                <pre><code># Create nested directories in one command
+mkdir -p linux_is_fun
+
+#Make sub-directories
+mkdir -p linux_is_fun/dir1/dir2
+
+# Change to the directory
+cd linux_is_fun/
+
+# Verify the structure
+ls
+</code></pre>
+            </div>
+
+            <div class="step" data-step="7">
+                <h3>Create files</h3><pre><code>
+# use nano to create files
+
+nano file1.txt
+
+#Make a new file and write some content to it
+cat > file1.txt
+
+touch sample.txt
+echo "Hello Bioinformatics" > greeting.txt
+echo -e "gene1\t100\ngene2\t250\ngene3\t75" > counts.txt
+            
+ls
+        </code></pre></div>
+
+            <div class="step" data-step="8">
+                <h3>Copy, Move, and Remove: <code>cp</code>, <code>mv</code>, <code>rm</code></h3>
+                <pre><code># Copy a file
+cp data/greeting.txt results/greeting_backup.txt
+
+# Copy a directory recursively
+cp -r data data_backup
+
+# Move (rename) a file
+mv results/greeting_backup.txt results/hello.txt
+
+# Remove a file (be careful - no undo!)
+rm results/hello.txt
+
+# Remove an empty directory
+rmdir data_backup
+
+# Remove a non-empty directory recursively
+# rm -r data_backup</code></pre>
+                <div class="info-box warning">
+                    <strong>Caution with <code>rm</code></strong>
+                    <p>There is no recycle bin on Linux. Once a file is deleted with <code>rm</code>, it is gone permanently. Always double-check before running <code>rm -r</code>.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="9">
+                <h3>Viewing File Contents: <code>head</code>, <code>tail</code>, <code>less</code>, <code>cat</code></h3>
+                <pre><code># View the first 5 lines of a file
+head -5 data/counts.txt
+
+# View the last 2 lines
+tail -2 data/counts.txt
+
+# View the entire file (for small files only)
+cat data/counts.txt
+
+# Scroll through a file interactively (press q to quit)
+less data/counts.txt</code></pre>
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>Counting and Searching: <code>wc</code>, <code>grep</code></h3>
+                <pre><code># Count lines, words, and characters
+wc data/counts.txt
+
+# Count only lines
+wc -l ata/counts.txt
+
+# Search for a pattern in a file
+grep "gene1" data/counts.txt
+
+# Search case-insensitively
+grep -i "GENE" data/counts.txt
+
+# Count matching lines
+grep -c "gene" data/counts.txt</code></pre>
+            </div>
+
+            <div class="step" data-step="11">
+                <h3>Combining Commands with Pipes</h3>
+                <p>Pipes (<code>|</code>) send the output of one command as input to another. This is one of the most powerful features of Linux.</p>
+                <pre><code># Sort the counts file by the second column (numerically)
+sort -k2 -n data/counts.txt
+
+# Find the gene with the highest count
+sort -k2 -n data/counts.txt | tail -1
+
+# Chain multiple commands together
+cat data/counts.txt | sort -k2 -rn | head -1</code></pre>
+                <div class="info-box tip">
+                    <strong>Tip: Redirect Output to a File</strong>
+                    <p>Use <code>&gt;</code> to write output to a file (overwrites) and <code>&gt;&gt;</code> to append. For example: <code>grep "gene" counts.txt &gt; results.txt</code></p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Getting Started on Ibex</h2>
+            <div class="step" data-step="12">
+                <h3>Start an Interactive Session</h3>
+                <pre><code># IMPORTANT: Never run analyses on login nodes!
+# Request an interactive compute session:
+srun --pty --time=2:00:00 --mem=4G bash
+
+# Your prompt will change to show a compute node name</code></pre>
+                <div class="info-box warning">
+                    <strong>Do not skip this step!</strong>
+                    <p>Running compute-intensive tasks on login nodes slows the system for all users. Always request an interactive session or submit a batch job.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="13">
+                <h3>Explore the Module System</h3>
+                <pre><code># List all available modules
+module avail
+
+# Search for a specific tool
+module avail samtools
+
+# Load a module
+module load samtools
+
+# See which modules are currently loaded
+module list
+
+# Unload a module
+module unload samtools</code></pre>
+                <div class="info-box tip">
+                    <strong>Tip: The Module System</strong>
+                    <p>Ibex uses the <strong>module system</strong> to manage software. You can search for available software with <code>module avail toolname</code> and see specific versions with <code>module avail samtools</code>. Modules must be loaded at the start of every new session.</p>
+                </div>
+            </div>
+
+        </section>
+        <!-- ============ -->
+        <!-- Exercises     -->
+        <!-- ============ -->
+        <section id="exercises">
+            <h2>Exercises</h2>
+            <p>Try these exercises on your own using the commands you have learned. Refer to the sections above if you get stuck.</p>
+
+            <div class="card">
+                <h3>Exercise 1: Directory Navigation</h3>
+                <p>Starting from your home directory, navigate to <code>~/workshop/day1/workshop</code> and back to your home directory using at least three different methods.</p>
+                <p><em>Hint: Try <code>cd ~</code>, <code>cd</code> (no argument), and <code>cd -</code></em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 3: Pipe Challenge</h3>
+                <p>Using a single piped command, find the total number of lines across all <code>.txt</code> files in the <code>data/</code> directory.</p>
+                <p><em>Hint: Use <code>cat data/*.txt | wc -l</code></em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 4: Sorting Practice</h3>
+                <p>Sort the <code>data/counts.txt</code> file by gene name (alphabetically) and save the result to <code>results/sorted_genes.txt</code>.</p>
+                <p><em>Hint: Use <code>sort</code> with output redirection</em></p>
+            </div>
+        </section>
+
+        <!-- ========= -->
+        <!-- Summary   -->
+        <!-- ========= -->
+        <section id="summary">
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Connected to Ibex and started an interactive compute session</li>
+                <li>Explored the HPC module system for loading software</li>
+                <li>Practiced essential Linux commands: navigation (<code>pwd</code>, <code>cd</code>, <code>ls</code>), file operations (<code>mkdir</code>, <code>cp</code>, <code>mv</code>, <code>rm</code>), file viewing (<code>head</code>, <code>tail</code>, <code>less</code>), and text processing (<code>wc</code>, <code>grep</code>, pipes)</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab2.html">Lab 2 - Genomic File Formats</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>

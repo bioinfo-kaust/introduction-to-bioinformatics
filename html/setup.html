@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">The Bioinformatics Platform - KAUST</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html">Labs</a></li>
+                <li><a href="setup.html" class="active">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Environment Setup</h1>
+        <p>Complete these setup steps to run bioinformatics analysis. All labs will run on the KAUST Ibex HPC cluster.</p>
+
+        <div class="info-box warning">
+            <strong>Prerequisites</strong>
+            <ul>
+                <li>An active Ibex account (request via KAUST IT if you don't have one)</li>
+                <li>A laptop with a terminal application and SSH access</li>
+            </ul>
+        </div>
+
+        <section id="terminal-setup">
+            <h2>Step 1: Terminal Setup (Local Machine)</h2>
+            <details><summary>macOS Users</summary>
+                <div class="step" data-step="1">
+                    <h4>Open Terminal</h4>
+                    <pre><code># Applications > Utilities > Terminal
+# Or use Spotlight: Cmd + Space, type "Terminal"
+
+</code></pre>
+                </div>
+            </details>
+
+            <details><summary>Windows Users (WSL)</summary>
+                <div class="step" data-step="1">
+                    <h4>Enable WSL</h4>
+                    <pre><code># Open PowerShell as Administrator and run:
+wsl --install
+
+# This installs WSL with Ubuntu by default
+# Restart your computer when prompted</code></pre>
+                </div>
+                <div class="step" data-step="2">
+                    <h4>Complete Ubuntu Setup</h4>
+                    <pre><code># After restart, Ubuntu will launch automatically
+# Create a username and password when prompted
+
+# Update package lists
+sudo apt update && sudo apt upgrade -y</code></pre>
+                </div>
+            </details>
+
+            <details><summary>Linux Users</summary>
+                <p>You likely already have a terminal. Verify SSH is available:</p>
+                <pre><code>ssh -V</code></pre>
+            </details>
+        </section>
+
+        <section id="ibex-connection">
+            <h2>Step 2: Connect to Ibex</h2>
+
+            <div class="step" data-step="1">
+                <h3>SSH Connection</h3>
+                <pre><code># Connect to Ibex login node
+ssh username@ilogin.ibex.kaust.edu.sa
+
+# You will be prompted for your password
+# After login, you should see the Ibex welcome message</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Start an Interactive Session</h3>
+                <pre><code># IMPORTANT: Never run analyses on login nodes!
+# Request an interactive session for the workshop:
+srun --pty --time=4:00:00 --mem=8G --cpus-per-task=4 bash
+
+# You should see your prompt change to a compute node</code></pre>
+            </div>
+
+            <div class="info-box note">
+                <strong>Ibex File Systems</strong>
+                <table class="schedule-table">
+                    <tr><th>Location</th><th>Path</th><th>Purpose</th><th>Quota</th></tr>
+                    <tr><td>Home</td><td><code>/home/username</code></td><td>Scripts, configs (do NOT run jobs here)</td><td>200 GB</td></tr>
+                    <tr><td>Scratch</td><td><code>/ibex/user/username</code></td><td>Analysis work directory</td><td>1.5 TB</td></tr>
+                    <tr><td>Project</td><td><code>/ibex/project/...</code></td><td>Shared data</td><td>Varies</td></tr>
+                </table>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Access Ibex Files via Mac Finder (Optional)</h3>
+                <pre><code># On macOS, you can mount Ibex home in Finder:
+# Finder > Go > Connect to Server (Cmd+K)
+# Enter: smb://ilogin.ibex.kaust.edu.sa/home
+# Use your Ibex credentials</code></pre>
+            </div>
+        </section>
+
+        <section id="module-setup">
+            <h2>Step 3: Load Required Tools on Ibex</h2>
+            <p>Ibex uses the <strong>module system</strong> to manage software. Below are the modules needed for this workshop.</p>
+
+            <div class="step" data-step="1">
+                <h3>Verify Module System</h3>
+                <pre><code># List available modules
+module avail
+
+# Search for specific tools
+module avail fastqc
+module avail samtools
+module avail star</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Load Workshop Tools</h3>
+                <pre><code># Load bioinformatics tools (run these at the start of each session)
+module load fastqc
+module load fastp
+module load seqkit
+module load star
+module load samtools
+module load bedtools
+module load blast+
+module load multiqc
+module load sra-tools
+
+# Verify tools are loaded
+module list
+
+# Test a few tools
+fastqc --version
+samtools --version
+seqkit version</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Set Up Python Environment (for Day 3)</h3>
+                <pre><code># Load Python and create a conda environment
+module load anaconda3
+
+# Create workshop environment
+conda create -n bioinfo python=3.11 -y
+conda activate bioinfo
+
+# Install visualization packages
+pip install jupyter seaborn matplotlib pandas numpy
+
+# Verify
+python -c "import seaborn; import matplotlib; print('Python packages OK')"</code></pre>
+            </div>
+        </section>
+
+        <section id="workspace-setup">
+            <h2>Step 4: Create Workshop Workspace</h2>
+            <pre><code># Navigate to your scratch space
+cd /ibex/user/$USER
+
+# Create workshop directory structure
+mkdir -p workshop
+cd workshop
+mkdir -p raw_data references trimmed_data qc_reports alignment results logs
+
+# Verify structure
+tree</code></pre>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+
+            <div class="info-box warning">
+                <strong>Cannot connect to Ibex</strong>
+                <p>Make sure you are on the KAUST network or connected via VPN. Try: <code>ssh -v username@ilogin.ibex.kaust.edu.sa</code> for verbose output.</p>
+            </div>
+
+            <div class="info-box warning">
+                <strong>Module not found</strong>
+                <p>Module names may include version numbers. Use <code>module avail toolname</code> to see available versions, then load the specific version: <code>module load samtools/1.17</code></p>
+            </div>
+
+            <div class="info-box warning">
+                <strong>Permission denied on scratch</strong>
+                <p>Your scratch directory may not exist yet. Contact KAUST IT to provision it, or check if the path is <code>/ibex/scratch/$USER</code> instead.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Quick Reference: Daily Commands</h2>
+            <pre><code># Connect to Ibex
+ssh username@ilogin.ibex.kaust.edu.sa
+
+# Start interactive session
+srun --pty --time=4:00:00 --mem=8G --cpus-per-task=4 bash
+
+# Navigate to workspace
+cd /ibex/user/$USER/workshop</code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

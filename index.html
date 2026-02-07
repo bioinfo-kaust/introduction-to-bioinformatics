@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo"><p>The Bioinformatics Platform - KAUST</p></a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="html/schedule.html">Schedule</a></li>
+                <li><a href="html/labs.html">Labs</a></li>
+                <li><a href="html/setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="hero">
+            <h1 style="color:aliceblue;">Introduction to Applied Bioinformatics</h1>
+            <p>A 3-Day Hands-on Training Program for Beginners</p>
+            <div class="dates">
+                <strong>February 8-10, 2026</strong> | Building 1, L2, Room 2418 (Multi-Purpose Room, Desert Side)
+            </div>
+        </div>
+        <section>
+            <h2>Learning Outcomes</h2>
+            <div class="outcome-grid">
+                <div class="outcome-item">
+                    <span class="icon">&#128218;</span>
+                    <div>
+                        <strong>Bioinformatics Concepts</strong>
+                        <p>Understand core bioinformatics concepts and get insights into various bioinformatics applications</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#128187;</span>
+                    <div>
+                        <strong>Sequencing Data</strong>
+                        <p>Get familiar with short-read &amp; long-read sequencing data and genomic file formats</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#129516;</span>
+                    <div>
+                        <strong>Linux &amp; HPC</strong>
+                        <p>Navigate the Linux command line and use HPC (Ibex) for bioinformatics analysis</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#128196;</span>
+                    <div>
+                        <strong>Public Data Access</strong>
+                        <p>Access public data repositories, perform QC, alignment, and visualization</p>
+                    </div>
+                </div>
+                
+                <div class="outcome-item">
+                    <span class="icon">&#127891;</span>
+                    <div>
+                        <strong>Practical Skills</strong>
+                        <p>Gain practical bioinformatics skills including QC, alignment, BLAST, and visualization</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section>
+            <h2>Program Overview</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <span class="tag">Day 1</span>
+                    <h3>Foundations</h3>
+                    <p>Bioinformatics overview, Linux basics &amp; HPC, sequencing technologies, genomic file formats, and hands-on exploration with seqkit and samtools.</p>
+                    <a href="html/schedule.html#day1">View Day 1 Schedule &rarr;</a>
+                </div>
+                <div class="card">
+                    <span class="tag">Day 2</span>
+                    <h3>Data Processing</h3>
+                    <p>Public data repositories, data retrieval, quality control with FastQC &amp; fastp, reference genome alignment with STAR, pairwise alignment &amp; BLAST.</p>
+                    <a href="html/schedule.html#day2">View Day 2 Schedule &rarr;</a>
+                </div>
+                <div class="card">
+                    <span class="tag">Day 3</span>
+                    <h3>Reporting &amp; Capstone</h3>
+                    <p>Data visualization with Jupyter &amp; seaborn, MultiQC reporting, and a capstone variant discovery project with IGV visualization.</p>
+                    <a href="html/schedule.html#day3">View Day 3 Schedule &rarr;</a>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2>Practical Information</h2>
+
+            <h3>Schedule</h3>
+            <ul>
+                <li><strong>Dates:</strong> February 8-10, 2026 (Sunday - Tuesday)</li>
+                <li><strong>Daily Sessions:</strong> 9:00-12:15 and 13:30-17:00</li>
+                <li><strong>Venue:</strong> Multipurpose Room (MPR), Level 1, Building 1 (TBB)</li>
+                <li><strong>Catering:</strong> Coffee and snacks provided</li>
+            </ul>
+
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Ibex account</li>
+                <li>Laptop with terminal access</li>
+                <li>Biology background (no programming experience required)</li>
+            </ul>
+
+            <h3>Instructors</h3>
+            <ul>
+                <li>Husen Umer</li>
+                <li>Salim Bougouffa</li>
+                <li>Issaac Rajan</li>
+            </ul>
+
+            <div class="quick-links">
+                <a href="html/schedule.html" class="quick-link">&#128197; View Full Schedule</a>
+                <a href="html/labs.html" class="quick-link">&#129514; Browse Labs</a>
+                <a href="html/setup.html" class="quick-link">&#128736; Setup Environment</a>
+            </div>
+        </section>
+
+        
+
+        <section>
+            <h2>Tools Used</h2>
+            <div class="tools-list">
+                <span class="tool-tag">FastQC</span>
+                <span class="tool-tag">fastp</span>
+                <span class="tool-tag">SeqKit</span>
+                <span class="tool-tag">STAR</span>
+                <span class="tool-tag">samtools</span>
+                <span class="tool-tag">IGV</span>
+                <span class="tool-tag">BLAST</span>
+                <span class="tool-tag">sra-tools</span>
+                <span class="tool-tag">MultiQC</span>
+                <span class="tool-tag">seaborn</span>
+                <span class="tool-tag">Jupyter</span>
+                <span class="tool-tag">bedtools</span>
+            </div>
+        </section>
+
+        <section>
+            <h2>Relevant Resources</h2>
+            <ul>
+                <li><a href="https://www.ebi.ac.uk/training/online/courses/bioinformatics-terrified/" target="_blank">EMBL - Bioinformatics for the Terrified</a></li>
+                <li><a href="https://www.ebi.ac.uk/training/materials/genome-bioinformatics-materials/course-content/" target="_blank">EMBL - Genome Bioinformatics: Short- to Long-Read Sequencing</a></li>
+                <li><a href="https://www.ebi.ac.uk/training/materials/introduction-to-rna-seq-materials/course-content/" target="_blank">EMBL - Introduction to RNA-seq</a></li>
+                <li><a href="https://www.ebi.ac.uk/training/materials/cancer-genomics-materials/short-read-rna-seq-analysis/" target="_blank">EMBL - RNA-seq in Cancer Genomics</a></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
