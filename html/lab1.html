@@ -232,7 +232,7 @@ cat data/counts.txt | sort -k2 -rn | head -1</code></pre>
                 <h3>Start an Interactive Session</h3>
                 <pre><code># IMPORTANT: Never run analyses on login nodes!
 # Request an interactive compute session:
-srun --pty --time=2:00:00 --mem=4G bash
+srun --pty --time=2:00:00 --mem=4G -c 4 bash
 
 # Your prompt will change to show a compute node name</code></pre>
                 <div class="info-box warning">
