@@ -26,9 +26,9 @@
         <div class="info-box note">
             <strong>Learning Objectives</strong>
             <ul>
-                <li>Explore FASTA, FASTQ, BAM, and BED files using bioinformatics tools</li>
+                <li>Explore FASTA, FASTQ, and BAM files using bioinformatics tools</li>
                 <li>Understand the structure and purpose of each genomic file format</li>
-                <li>Use seqkit, samtools, and bedtools for basic file inspection</li>
+                <li>Use seqkit, and samtools for basic file inspection</li>
                 <li>Debug common issues with corrupted sequencing files</li>
             </ul>
         </div>
@@ -205,7 +205,7 @@ seqkit stats Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
 zcat Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz | head -5</code></pre>
                 <div class="info-box tip">
                     <strong>Tip: Compressed File Handling</strong>
-                    <p>Most bioinformatics tools (seqkit, samtools, bedtools) can read <code>.gz</code> files directly. Use <code>zcat</code> or <code>zless</code> to view compressed files without decompressing them.</p>
+                    <p>Most bioinformatics tools (seqkit, samtools) can read <code>.gz</code> files directly. Use <code>zcat</code> or <code>zless</code> to view compressed files without decompressing them.</p>
                 </div>
                 <div class="info-box note">
                     <strong>File Naming Convention</strong>
@@ -406,52 +406,6 @@ head -20 genome_data/misc/sample.sam</code></pre>
             </div>
         </section>
 
-        <!-- ========================================== -->
-        <!-- Part 5: Working with Genomic Intervals     -->
-        <!-- ========================================== -->
-        <section id="bed-gtf">
-            <h2>Part 5: Working with Genomic Intervals (BED/GTF)</h2>
-            <p>BED (Browser Extensible Data) files define genomic regions as intervals. They are used to represent features like genes, exons, peaks, and regions of interest. BED is 0-based (the first base of a chromosome is position 0).</p>
-
-            <div class="step" data-step="1">
-                <h3>Create a Simple BED File</h3>
-                <pre><code># BED format: chromosome  start  end  [name  score  strand ...]
-# Note: BED coordinates are 0-based, half-open
-echo -e "ref1\t0\t100\tregion_A\nref1\t50\t150\tregion_B\nref1\t200\t300\tregion_C" > regions.bed
-
-# View the file
-cat regions.bed</code></pre>
-            </div>
-
-            <div class="step" data-step="2">
-                <h3>Merge Overlapping Intervals</h3>
-                <pre><code># Sort the BED file first (required by bedtools)
-sort -k1,1 -k2,2n regions.bed > regions_sorted.bed
-
-# Merge overlapping regions
-bedtools merge -i regions_sorted.bed
-
-# Notice that region_A (0-100) and region_B (50-150) overlap,
-# so they are merged into a single interval (0-150).
-# region_C (200-300) does not overlap, so it remains separate.</code></pre>
-            </div>
-
-            <div class="step" data-step="3">
-                <h3>Find Intersecting Intervals</h3>
-                <pre><code># Create a second BED file representing "queries"
-echo -e "ref1\t75\t125\tquery_1\nref1\t250\t275\tquery_2" > queries.bed
-
-# Find overlaps between the two BED files
-bedtools intersect -a regions_sorted.bed -b queries.bed
-
-# Show which original regions overlap (report the original entries)
-bedtools intersect -a regions_sorted.bed -b queries.bed -wa -wb</code></pre>
-                <div class="info-box tip">
-                    <strong>Tip: When to Use bedtools</strong>
-                    <p>bedtools is essential for tasks like: finding which genes overlap with ChIP-seq peaks, extracting reads from a specific genomic region, computing coverage over intervals, and many other interval-based operations.</p>
-                </div>
-            </div>
-        </section>
 
         <!-- ============ -->
         <!-- Exercises     -->
@@ -496,7 +450,6 @@ bedtools intersect -a regions_sorted.bed -b queries.bed -wa -wb</code></pre>
                 <li>Explored <strong>FASTA</strong> files using <code>seqkit</code> to view sequences, headers, and statistics</li>
                 <li>Explored <strong>FASTQ</strong> files, understood the 4-line format, and examined paired-end reads</li>
                 <li>Explored <strong>BAM/SAM</strong> files using <code>samtools</code> to view headers, alignments, and flag statistics</li>
-                <li>Explored <strong>BED</strong> files and used <code>bedtools</code> for interval merging and intersection</li>
                 <li>Practiced debugging with intentionally broken FASTQ files</li>
             </ul>
             <p><strong>Next:</strong> <a href="lab3.html">Lab 3 - Data Retrieval from Public Repositories</a></p>
