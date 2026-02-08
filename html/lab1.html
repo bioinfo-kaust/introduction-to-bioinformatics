@@ -149,22 +149,23 @@ ls
             <div class="step" data-step="8">
                 <h3>Copy, Move, and Remove: <code>cp</code>, <code>mv</code>, <code>rm</code></h3>
                 <pre><code># Copy a file
-cp data/greeting.txt results/greeting_backup.txt
+
+                    cp greeting.txt ../greeting_backup.txt
 
 # Copy a directory recursively
-cp -r data data_backup
+cp -r linux_is_fun linux_is_easy
 
 # Move (rename) a file
-mv results/greeting_backup.txt results/hello.txt
+mv greeting_backup.txt linux_is_fun/dir1/hello.txt
 
 # Remove a file (be careful - no undo!)
-rm results/hello.txt
+rm linux_is_fun/dir1/hello.txt
 
 # Remove an empty directory
-rmdir data_backup
+rmdir linux_is_fun/dir1
 
 # Remove a non-empty directory recursively
-# rm -r data_backup</code></pre>
+# rm -r linux_is_fun</code></pre>
                 <div class="info-box warning">
                     <strong>Caution with <code>rm</code></strong>
                     <p>There is no recycle bin on Linux. Once a file is deleted with <code>rm</code>, it is gone permanently. Always double-check before running <code>rm -r</code>.</p>
@@ -174,16 +175,16 @@ rmdir data_backup
             <div class="step" data-step="9">
                 <h3>Viewing File Contents: <code>head</code>, <code>tail</code>, <code>less</code>, <code>cat</code></h3>
                 <pre><code># View the first 5 lines of a file
-head -5 data/counts.txt
+head -5 linux_is_fun/counts.txt
 
 # View the last 2 lines
-tail -2 data/counts.txt
+tail -2 linux_is_fun/counts.txt
 
 # View the entire file (for small files only)
-cat data/counts.txt
+cat linux_is_fun/counts.txt
 
 # Scroll through a file interactively (press q to quit)
-less data/counts.txt</code></pre>
+less linux_is_fun/counts.txt</code></pre>
             </div>
 
             <div class="step" data-step="10">
