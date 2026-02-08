@@ -80,13 +80,13 @@ ls -lh</code></pre>
 wget -h
 
 #download a sample data using wget:
-wget https://raw.githubusercontent.com/bioinfo-kaust/introduction-to-bioinformatics/main/data/sequences.zip
+wget https://raw.githubusercontent.com/bioinfo-kaust/introduction-to-bioinformatics/main/data/genome_data.zip
 
-#check if theere is a new file named <code>sequences.zip</code> after the download
+#check if theere is a new file named <code>genome_data.zip</code> after the download
 ls -lh
 
 #this file is compress we ned to uncompress using unzip command
-unzip sequences.zip</code></pre>
+unzip genome_data.zip</code></pre>
 </div>
 
             <div class="step" data-step="3">
@@ -96,10 +96,10 @@ unzip sequences.zip</code></pre>
 ls -h/
 
 #check sequences folder:
-ls sequences
+ls genome_data
 
 #How many sample files are there?
-ls sequences | wc -l</code></pre>
+ls genome_data | wc -l</code></pre>
             </div>
 
             <div class="step" data-step="4">
@@ -186,18 +186,45 @@ seqkit seq -n genome_data/reference/mini_ref.fasta</code></pre>
             </div>
 
             <div class="step" data-step="4">
-                <h3>Explore Compressed Genome Files</h3>
+                <h3>Explore Compressed Genome Files - Let's get a bigger file (human chr11 DNA)</h3>
+<pre><code># Download human chromosome 11 sequence
+echo "Downloading chromosome 11 genome..."
+wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+
+#check what you got?
+ls .
+</pre></code>
                 <p>Real genome files are typically compressed with gzip. Bioinformatics tools like seqkit can read compressed files directly.</p>
                 <pre><code># Get statistics for compressed genome files
-seqkit stats genome_data/reference/*.fna.gz
+seqkit stats Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
 
 # You can also look at them without decompressing
-zcat genome_data/reference/*.fna.gz | head -5</code></pre>
+zcat Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz | head -5</code></pre>
                 <div class="info-box tip">
                     <strong>Tip: Compressed File Handling</strong>
                     <p>Most bioinformatics tools (seqkit, samtools, bedtools) can read <code>.gz</code> files directly. Use <code>zcat</code> or <code>zless</code> to view compressed files without decompressing them.</p>
                 </div>
+                <div class="info-box note">
+                    <strong>File Naming Convention</strong>
+                    <p><code>Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz</code></p>
+                    <ul>
+                        <li><strong>Homo_sapiens</strong> - Species name</li>
+                        <li><strong>GRCh38</strong> - Genome assembly version (Genome Reference Consortium Human Build 38)</li>
+                        <li><strong>dna</strong> - DNA sequence type</li>
+                        <li><strong>chromosome.11</strong> - Specific chromosome</li>
+                        <li><strong>.fa.gz</strong> - FASTA format, gzip compressed</li>
+                    </ul>
+                </div>
+            
+            <div class="card">
+                <h3>Exercise 1: Explore the DNA file</h3>
+                <p>Use command-line tools to answer:</p>
+                <ol>
+                    <li>How many nucleotides are on chromosome 11?</li>
+                    <li>What is the size of chr11 FASTA file</li>
+                </ol>
             </div>
+        </div>
         </section>
 
         <!-- ============================= -->
@@ -271,7 +298,7 @@ tail -10 genome_data/fastq/truncated.fastq</code></pre>
             <div class="step" data-step="5">
                 <h3>Batch Statistics on Multiple FASTQ Files</h3>
                 <pre><code># Get statistics for all .fq files at once
-seqkit stats genome_data/*.fq
+seqkit stats genome_data/sequences/*.fq
 
 # You can also use wildcards for subsets
 seqkit stats genome_data/sequence_0*.fq</code></pre>
