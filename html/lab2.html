@@ -42,6 +42,9 @@
                 <pre><code># Open your terminal and connect to Ibex
 ssh username@ilogin.ibex.kaust.edu.sa
 
+#start an ineractive job
+srun --cpus-per-task=4 --mem=32G --time=04:00:00 --pty /bin/bash
+
 # Replace "username" with your actual Ibex username
 # Enter your password when prompted
 
