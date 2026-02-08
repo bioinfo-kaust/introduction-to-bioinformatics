@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 2: Genomic File Formats - Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">The Bioinformatics Platform - KAUST</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Lab 2: Explore Genomic File Formats</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Understand the structure and purpose of six core genomic file formats: FASTA, FASTQ, SAM/BAM, VCF, GTF/GFF, and BED</li>
+                <li>Inspect and explore each format using Linux commands (<code>head</code>, <code>grep</code>, <code>wc -l</code>, <code>cut</code>, <code>awk</code>)</li>
+                <li>Use bioinformatics tools: <code>seqkit</code>, <code>samtools</code>, <code>bcftools</code>, and <code>bedtools</code></li>
+                <li>Understand coordinate systems (0-based vs 1-based)</li>
+                <li>Debug common issues with corrupted sequencing files</li>
+            </ul>
+        </div>
+
+        <!-- ================================= -->
+        <!-- Part 1: Setup on Ibex             -->
+        <!-- ================================= -->
+        <section id="setup">
+            <h2>Part 1: Setup on Ibex</h2>
+
+            <div class="step" data-step="1">
+                <h3>Connect to Ibex via SSH</h3>
+                <pre><code># Open your terminal and connect to Ibex
+ssh username@ilogin.ibex.kaust.edu.sa
+
+# Replace "username" with your actual Ibex username
+# Enter your password when prompted
+
+# Confirm your location
+pwd</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Load Required Modules</h3>
+                <pre><code># Search for available tools
+module avail seqkit
+module avail samtools
+module avail bcftools
+module avail bedtools
+
+# Load the tools for this session
+module load seqkit
+module load samtools
+module load bcftools
+module load bedtools
+
+# Verify loaded modules
+module list
+
+# Test each tool
+seqkit version
+samtools --version | head -1
+bcftools --version | head -1
+bedtools --version</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Download the Sample Dataset</h3>
+                <pre><code># Create a workspace for today's lab
+mkdir -p ~/workshop/day1
+cd ~/workshop/day1
+
+# Download the sample data
+wget https://raw.githubusercontent.com/bioinfo-kaust/introduction-to-bioinformatics/main/data.zip
+
+# Extract the archive
+unzip data.zip
+
+# Set a shortcut variable for the data directory
+DATA=~/workshop/day1/genome_data
+
+# See what is inside
+ls $DATA
+ls $DATA/reference/
+ls $DATA/fastq/
+ls $DATA/bam/
+ls $DATA/vcf/
+ls $DATA/annotation/</code></pre>
+                <div class="info-box note">
+                    <strong>What is in the sample data?</strong>
+                    <ul>
+                        <li><code>reference/mini_ref.fasta</code> &ndash; Small reference genome (3 sequences)</li>
+                        <li><code>fastq/sample_R1.fastq, sample_R2.fastq</code> &ndash; Paired-end reads</li>
+                        <li><code>fastq/broken.fastq, truncated.fastq</code> &ndash; Intentionally corrupted files for debugging</li>
+                        <li><code>bam/sample.bam</code> &ndash; Aligned reads (binary format)</li>
+                        <li><code>vcf/sample.vcf</code> &ndash; Variant calls (12 variants, 2 samples)</li>
+                        <li><code>annotation/mini_ref.gtf</code> &ndash; Gene annotation (5 genes)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================ -->
+        <!-- Part 2: Exploring FASTA      -->
+        <!-- ============================ -->
+        <section id="fasta">
+            <h2>Part 2: FASTA &ndash; Reference Sequences</h2>
+            <p>FASTA is the standard format for storing nucleotide or protein sequences. Each record has a header line starting with <code>&gt;</code> followed by the sequence on subsequent lines.</p>
+
+            <div class="step" data-step="1">
+                <h3>View the Raw FASTA Format</h3>
+                <pre><code># Look at the first 20 lines
+head -20 $DATA/reference/mini_ref.fasta</code></pre>
+                <div class="info-box note">
+                    <strong>FASTA Format Structure</strong>
+                    <pre><code>&gt;sequence_name optional description
+ATGCATGCATGCATGCATGCATGC
+GCTAGCTAGCTAGCTAGCTAGCTA
+...</code></pre>
+                    <ul>
+                        <li>Line 1: Header starting with <code>&gt;</code>, followed by sequence ID and optional description</li>
+                        <li>Lines 2+: The sequence itself, typically wrapped at 60-80 characters per line</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Explore with Linux Commands</h3>
+                <pre><code># Count total lines in the file
+wc -l $DATA/reference/mini_ref.fasta
+
+# Count the number of sequences (header lines)
+grep -c "^>" $DATA/reference/mini_ref.fasta
+
+# Extract only the header lines
+grep "^>" $DATA/reference/mini_ref.fasta</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Explore with seqkit</h3>
+                <pre><code># Basic statistics
+seqkit stats $DATA/reference/mini_ref.fasta
+
+# Detailed statistics (includes N50, GC content, etc.)
+seqkit stats -a $DATA/reference/mini_ref.fasta
+
+# View headers only (sequence names)
+seqkit seq -n $DATA/reference/mini_ref.fasta
+
+# Get sequence lengths
+seqkit fx2tab -n -l $DATA/reference/mini_ref.fasta</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Working with Compressed Genome Files</h3>
+                <p>Real genome files are typically gzip-compressed. Bioinformatics tools can read <code>.gz</code> files directly.</p>
+                <pre><code># Download human chromosome 11 (compressed FASTA)
+wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+
+# Get statistics without decompressing
+seqkit stats Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+
+# View the first 5 lines without decompressing
+zcat Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz | head -5</code></pre>
+                <div class="info-box tip">
+                    <strong>Tip: Compressed File Handling</strong>
+                    <p>Most bioinformatics tools (seqkit, samtools, bedtools) can read <code>.gz</code> files directly. Use <code>zcat</code> or <code>zless</code> to view compressed files without decompressing them.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================= -->
+        <!-- Part 3: Exploring FASTQ        -->
+        <!-- ============================= -->
+        <section id="fastq">
+            <h2>Part 3: FASTQ &ndash; Sequencing Reads with Quality</h2>
+            <p>FASTQ extends FASTA by adding per-base quality scores. It is the primary output format of Illumina and other sequencing platforms.</p>
+
+            <div class="step" data-step="1">
+                <h3>View the Raw FASTQ Format</h3>
+                <pre><code># View the first 3 reads (each read = 4 lines)
+head -12 $DATA/fastq/sample_R1.fastq</code></pre>
+                <div class="info-box note">
+                    <strong>FASTQ Format: 4 Lines Per Read</strong>
+                    <table class="schedule-table">
+                        <tr><th>Line</th><th>Content</th><th>Example</th></tr>
+                        <tr><td>1</td><td>Header (starts with <code>@</code>)</td><td><code>@SEQ_ID instrument:run:flowcell:lane:tile:x:y</code></td></tr>
+                        <tr><td>2</td><td>DNA sequence</td><td><code>ATCGATCGATCG...</code></td></tr>
+                        <tr><td>3</td><td>Separator (always <code>+</code>)</td><td><code>+</code></td></tr>
+                        <tr><td>4</td><td>Quality scores (ASCII-encoded Phred)</td><td><code>IIIIIIIHGFED...</code></td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Understanding Phred Quality Scores</h3>
+                <div class="info-box note">
+                    <strong>Phred Score Quick Reference</strong>
+                    <table class="schedule-table">
+                        <tr><th>Phred Score</th><th>Error Probability</th><th>Accuracy</th><th>ASCII Character</th></tr>
+                        <tr><td>10</td><td>1 in 10</td><td>90%</td><td><code>+</code></td></tr>
+                        <tr><td>20</td><td>1 in 100</td><td>99%</td><td><code>5</code></td></tr>
+                        <tr><td>30</td><td>1 in 1,000</td><td>99.9%</td><td><code>?</code></td></tr>
+                        <tr><td>40</td><td>1 in 10,000</td><td>99.99%</td><td><code>I</code></td></tr>
+                    </table>
+                    <p>Formula: <code>Q = -10 * log10(P)</code>, where P is the probability of an incorrect base call. Higher scores = higher confidence.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Get FASTQ Statistics with seqkit</h3>
+                <pre><code># Basic statistics for each read file
+seqkit stats $DATA/fastq/sample_R1.fastq
+seqkit stats $DATA/fastq/sample_R2.fastq
+
+# Detailed statistics (includes Q20/Q30 percentages)
+seqkit stats -a $DATA/fastq/sample_R1.fastq</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Understanding Paired-End Reads</h3>
+                <p>In paired-end sequencing, each DNA fragment is read from both ends (R1 = forward, R2 = reverse). Read pairs share the same ID.</p>
+                <pre><code># Compare read IDs between R1 and R2 -- they should match
+seqkit seq -n $DATA/fastq/sample_R1.fastq | head -5
+seqkit seq -n $DATA/fastq/sample_R2.fastq | head -5</code></pre>
+                <div class="info-box note">
+                    <strong>Paired-End Sequencing</strong>
+                    <p>R1 and R2 files must always be kept in sync &ndash; the first read in R1 is paired with the first read in R2, and so on. If the files get out of order, downstream alignment will fail.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Debugging: Broken and Truncated FASTQ Files</h3>
+                <p>Real-world data can sometimes be corrupted. The sample data includes intentionally broken files for practice.</p>
+                <pre><code># Try running stats on the broken file -- what happens?
+seqkit stats $DATA/fastq/broken.fastq
+
+# Try the truncated file
+seqkit stats $DATA/fastq/truncated.fastq
+
+# Inspect the broken file manually to find the issue
+head -20 $DATA/fastq/broken.fastq
+
+# Inspect the truncated file
+tail -10 $DATA/fastq/truncated.fastq</code></pre>
+                <div class="info-box tip">
+                    <strong>Tip: Always Validate Your Data</strong>
+                    <p>Run <code>seqkit stats</code> on your FASTQ files before starting analysis. Corrupted files cause silent errors in downstream tools.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Batch Statistics on Multiple Files</h3>
+                <pre><code># Get statistics for all FASTQ files at once
+seqkit stats $DATA/fastq/*.fastq</code></pre>
+            </div>
+        </section>
+
+        <!-- ============================ -->
+        <!-- Part 4: Exploring SAM/BAM    -->
+        <!-- ============================ -->
+        <section id="bam">
+            <h2>Part 4: SAM/BAM &ndash; Sequence Alignments</h2>
+            <p>SAM (Sequence Alignment Map) is a text format that stores read alignments against a reference genome. BAM is the compressed binary version. BAM files are smaller and faster to process, and are the standard in production pipelines.</p>
+
+            <div class="step" data-step="1">
+                <h3>View the BAM Header</h3>
+                <pre><code># View the header (reference sequences and program info)
+samtools view -H $DATA/bam/sample.bam</code></pre>
+                <div class="info-box note">
+                    <strong>BAM Header Sections</strong>
+                    <ul>
+                        <li><code>@HD</code> &ndash; Header line with format version and sort order</li>
+                        <li><code>@SQ</code> &ndash; Reference sequence names and lengths</li>
+                        <li><code>@RG</code> &ndash; Read group information (sample, library, platform)</li>
+                        <li><code>@PG</code> &ndash; Programs used to create/process the file</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>View Aligned Reads</h3>
+                <pre><code># View the first 5 aligned reads (SAM text format)
+samtools view $DATA/bam/sample.bam | head -5</code></pre>
+                <div class="info-box note">
+                    <strong>SAM Format: Key Columns</strong>
+                    <table class="schedule-table">
+                        <tr><th>Col</th><th>Field</th><th>Description</th></tr>
+                        <tr><td>1</td><td>QNAME</td><td>Read name</td></tr>
+                        <tr><td>2</td><td>FLAG</td><td>Bitwise flag (encodes read properties)</td></tr>
+                        <tr><td>3</td><td>RNAME</td><td>Reference sequence name</td></tr>
+                        <tr><td>4</td><td>POS</td><td>1-based leftmost mapping position</td></tr>
+                        <tr><td>5</td><td>MAPQ</td><td>Mapping quality</td></tr>
+                        <tr><td>6</td><td>CIGAR</td><td>Alignment description</td></tr>
+                        <tr><td>7</td><td>RNEXT</td><td>Mate reference name</td></tr>
+                        <tr><td>8</td><td>PNEXT</td><td>Mate position</td></tr>
+                        <tr><td>9</td><td>TLEN</td><td>Template length</td></tr>
+                        <tr><td>10</td><td>SEQ</td><td>Read sequence</td></tr>
+                        <tr><td>11</td><td>QUAL</td><td>Base quality scores</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Alignment Summary Statistics</h3>
+                <pre><code># Get a comprehensive alignment summary
+samtools flagstat $DATA/bam/sample.bam
+
+# Count total reads
+samtools view -c $DATA/bam/sample.bam
+
+# Count only properly paired reads (FLAG bit 0x2)
+samtools view -c -f 2 $DATA/bam/sample.bam</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Understanding SAM Flags</h3>
+                <p>SAM flags encode multiple read properties in a single number using bitwise encoding.</p>
+                <pre><code># Count reads by their flag values
+samtools view $DATA/bam/sample.bam | cut -f2 | sort | uniq -c | sort -rn | head -10
+
+# Filter for unmapped reads (FLAG bit 0x4)
+samtools view -c -f 4 $DATA/bam/sample.bam
+
+# Filter for mapped reads (exclude unmapped)
+samtools view -c -F 4 $DATA/bam/sample.bam</code></pre>
+                <div class="info-box note">
+                    <strong>Common SAM Flags</strong>
+                    <table class="schedule-table">
+                        <tr><th>Flag</th><th>Hex</th><th>Meaning</th></tr>
+                        <tr><td>1</td><td>0x1</td><td>Read is paired</td></tr>
+                        <tr><td>2</td><td>0x2</td><td>Read mapped in proper pair</td></tr>
+                        <tr><td>4</td><td>0x4</td><td>Read is unmapped</td></tr>
+                        <tr><td>8</td><td>0x8</td><td>Mate is unmapped</td></tr>
+                        <tr><td>16</td><td>0x10</td><td>Read on reverse strand</td></tr>
+                        <tr><td>256</td><td>0x100</td><td>Secondary alignment</td></tr>
+                    </table>
+                    <p>Use the Broad Institute's tool to decode any flag: <a href="https://broadinstitute.github.io/picard/explain-flags.html" target="_blank">Explain SAM Flags</a></p>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Understanding CIGAR Strings</h3>
+                <div class="info-box note">
+                    <strong>CIGAR Operations</strong>
+                    <table class="schedule-table">
+                        <tr><th>Code</th><th>Meaning</th><th>Example</th></tr>
+                        <tr><td>M</td><td>Alignment match (match or mismatch)</td><td><code>50M</code> = 50 bases aligned</td></tr>
+                        <tr><td>I</td><td>Insertion to the reference</td><td><code>3I</code> = 3 bases inserted</td></tr>
+                        <tr><td>D</td><td>Deletion from the reference</td><td><code>2D</code> = 2 bases deleted</td></tr>
+                        <tr><td>N</td><td>Skipped region (e.g., intron in RNA-seq)</td><td><code>1000N</code> = 1000 bp intron</td></tr>
+                        <tr><td>S</td><td>Soft clipping (bases present but not aligned)</td><td><code>5S45M</code> = 5 clipped + 45 aligned</td></tr>
+                    </table>
+                    <p>Example: <code>30M2I18M</code> means 30 matching bases, 2 inserted bases, then 18 matching bases.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================ -->
+        <!-- Part 5: Exploring VCF         -->
+        <!-- ============================ -->
+        <section id="vcf">
+            <h2>Part 5: VCF &ndash; Variant Calls</h2>
+            <p>VCF (Variant Call Format) stores information about genomic variants (SNPs, insertions, deletions) discovered by comparing sequencing reads to a reference genome.</p>
+
+            <div class="step" data-step="1">
+                <h3>View the Raw VCF Format</h3>
+                <pre><code># View the file (it is small enough to see all at once)
+cat $DATA/vcf/sample.vcf</code></pre>
+                <div class="info-box note">
+                    <strong>VCF File Structure</strong>
+                    <ul>
+                        <li><strong>Meta-information lines</strong> (start with <code>##</code>) &ndash; describe the file format, filters, INFO fields, and FORMAT fields</li>
+                        <li><strong>Header line</strong> (starts with <code>#CHROM</code>) &ndash; column names</li>
+                        <li><strong>Data lines</strong> &ndash; one variant per line</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>VCF Column Reference</h3>
+                <div class="info-box note">
+                    <strong>VCF Mandatory Columns</strong>
+                    <table class="schedule-table">
+                        <tr><th>Col</th><th>Field</th><th>Description</th></tr>
+                        <tr><td>1</td><td>CHROM</td><td>Chromosome</td></tr>
+                        <tr><td>2</td><td>POS</td><td>1-based position</td></tr>
+                        <tr><td>3</td><td>ID</td><td>Variant identifier (e.g., rsID)</td></tr>
+                        <tr><td>4</td><td>REF</td><td>Reference allele</td></tr>
+                        <tr><td>5</td><td>ALT</td><td>Alternate allele(s)</td></tr>
+                        <tr><td>6</td><td>QUAL</td><td>Variant quality score</td></tr>
+                        <tr><td>7</td><td>FILTER</td><td>Filter status (PASS or filter name)</td></tr>
+                        <tr><td>8</td><td>INFO</td><td>Additional information (key=value pairs)</td></tr>
+                        <tr><td>9</td><td>FORMAT</td><td>Genotype field format</td></tr>
+                        <tr><td>10+</td><td>SAMPLE(s)</td><td>Per-sample genotype data</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Explore VCF with Linux Commands</h3>
+                <pre><code># Count total variant lines (skip headers)
+grep -v "^#" $DATA/vcf/sample.vcf | wc -l
+
+# View only the data lines (no headers)
+grep -v "^#" $DATA/vcf/sample.vcf
+
+# Extract specific columns: CHROM, POS, REF, ALT
+grep -v "^#" $DATA/vcf/sample.vcf | cut -f1,2,4,5
+
+# Count variants per chromosome
+grep -v "^#" $DATA/vcf/sample.vcf | cut -f1 | sort | uniq -c
+
+# Find only SNPs
+grep -v "^#" $DATA/vcf/sample.vcf | grep "TYPE=SNP"
+
+# Find only insertions and deletions
+grep -v "^#" $DATA/vcf/sample.vcf | grep -E "TYPE=(INS|DEL)"
+
+# List variants that failed filters
+grep -v "^#" $DATA/vcf/sample.vcf | grep "LowQual"</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Explore VCF with bcftools</h3>
+                <pre><code># View the VCF (bcftools formats the output nicely)
+bcftools view $DATA/vcf/sample.vcf
+
+# Get summary statistics
+bcftools stats $DATA/vcf/sample.vcf | grep "^SN"
+
+# Query specific fields
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%QUAL\t%FILTER\n' $DATA/vcf/sample.vcf
+
+# Filter: keep only PASS variants
+bcftools view -f PASS $DATA/vcf/sample.vcf
+
+# Filter: keep only SNPs
+bcftools view -v snps $DATA/vcf/sample.vcf
+
+# Filter: keep only indels (insertions and deletions)
+bcftools view -v indels $DATA/vcf/sample.vcf
+
+# Filter by quality: keep variants with QUAL >= 80
+bcftools view -i 'QUAL>=80' $DATA/vcf/sample.vcf | grep -v "^#"</code></pre>
+                <div class="info-box note">
+                    <strong>Understanding Genotypes</strong>
+                    <ul>
+                        <li><code>0/0</code> &ndash; Homozygous reference (no variant)</li>
+                        <li><code>0/1</code> &ndash; Heterozygous (one copy of the variant)</li>
+                        <li><code>1/1</code> &ndash; Homozygous alternate (both copies carry the variant)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================ -->
+        <!-- Part 6: Exploring GTF/GFF     -->
+        <!-- ============================ -->
+        <section id="gtf">
+            <h2>Part 6: GTF/GFF &ndash; Gene Annotations</h2>
+            <p>GTF (Gene Transfer Format) and GFF (General Feature Format) describe the locations of genes, transcripts, exons, and other features on a reference genome. They are essential for RNA-seq analysis and variant annotation.</p>
+
+            <div class="step" data-step="1">
+                <h3>View the Raw GTF Format</h3>
+                <pre><code># View the annotation file
+cat $DATA/annotation/mini_ref.gtf</code></pre>
+                <div class="info-box note">
+                    <strong>GTF Format: 9 Columns (tab-separated)</strong>
+                    <table class="schedule-table">
+                        <tr><th>Col</th><th>Field</th><th>Description</th></tr>
+                        <tr><td>1</td><td>seqname</td><td>Chromosome or scaffold name</td></tr>
+                        <tr><td>2</td><td>source</td><td>Annotation source (e.g., Ensembl, NCBI)</td></tr>
+                        <tr><td>3</td><td>feature</td><td>Feature type (gene, transcript, exon, CDS)</td></tr>
+                        <tr><td>4</td><td>start</td><td>Start position (1-based)</td></tr>
+                        <tr><td>5</td><td>end</td><td>End position (1-based, inclusive)</td></tr>
+                        <tr><td>6</td><td>score</td><td>Score (or <code>.</code> if not applicable)</td></tr>
+                        <tr><td>7</td><td>strand</td><td><code>+</code> (forward) or <code>-</code> (reverse)</td></tr>
+                        <tr><td>8</td><td>frame</td><td>Reading frame (0, 1, 2) for CDS features</td></tr>
+                        <tr><td>9</td><td>attributes</td><td>Key-value pairs: gene_id, transcript_id, etc.</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Explore GTF with Linux Commands</h3>
+                <pre><code># Count total annotation lines (skip comment lines)
+grep -v "^#" $DATA/annotation/mini_ref.gtf | wc -l
+
+# Count features by type
+grep -v "^#" $DATA/annotation/mini_ref.gtf | cut -f3 | sort | uniq -c
+
+# List all gene names
+grep -v "^#" $DATA/annotation/mini_ref.gtf | grep "gene_name" | \
+    sed 's/.*gene_name "\([^"]*\)".*/\1/' | sort -u
+
+# Count genes per chromosome
+grep -v "^#" $DATA/annotation/mini_ref.gtf | awk '$3=="gene"' | cut -f1 | sort | uniq -c
+
+# Extract only protein-coding genes
+grep 'gene_biotype "protein_coding"' $DATA/annotation/mini_ref.gtf | awk '$3=="gene"'
+
+# Find genes on the reverse strand
+grep -v "^#" $DATA/annotation/mini_ref.gtf | awk '$3=="gene" && $7=="-"'
+
+# Get exon count per gene
+grep -v "^#" $DATA/annotation/mini_ref.gtf | awk '$3=="exon"' | \
+    grep -o 'gene_id "[^"]*"' | sort | uniq -c</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>GTF vs GFF3</h3>
+                <div class="info-box note">
+                    <strong>Key Differences: GTF vs GFF3</strong>
+                    <table class="schedule-table">
+                        <tr><th>Feature</th><th>GTF (GFF2)</th><th>GFF3</th></tr>
+                        <tr><td>Attribute format</td><td><code>key "value";</code></td><td><code>key=value;</code></td></tr>
+                        <tr><td>Hierarchy</td><td>Implicit (via gene_id)</td><td>Explicit (Parent= attribute)</td></tr>
+                        <tr><td>Gene ID</td><td><code>gene_id "ENSG...";</code></td><td><code>ID=gene:ENSG...;</code></td></tr>
+                        <tr><td>Common source</td><td>Ensembl, GENCODE</td><td>NCBI RefSeq</td></tr>
+                    </table>
+                    <p>Both formats contain the same biological information, but the attribute syntax differs. Many tools accept both formats.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================== -->
+        <!-- Part 7: Working with BED and Intervals   -->
+        <!-- ======================================== -->
+        <section id="bed">
+            <h2>Part 7: BED &ndash; Genomic Intervals</h2>
+            <p>BED (Browser Extensible Data) files define genomic regions as intervals. They are used to represent features like genes, exons, peaks, and regions of interest.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create a Simple BED File</h3>
+                <pre><code># BED format: chromosome  start  end  [name  score  strand ...]
+# Note: BED uses 0-based, half-open coordinates
+echo -e "ref1\t0\t100\tregion_A\nref1\t50\t150\tregion_B\nref1\t200\t300\tregion_C" > regions.bed
+
+# View the file
+cat regions.bed</code></pre>
+                <div class="info-box note">
+                    <strong>BED Format (minimum 3 columns)</strong>
+                    <ul>
+                        <li>Column 1: Chromosome name</li>
+                        <li>Column 2: Start position (0-based)</li>
+                        <li>Column 3: End position (exclusive)</li>
+                        <li>Optional: name, score, strand (columns 4-6)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Merge Overlapping Intervals</h3>
+                <pre><code># Sort the BED file first (required by bedtools)
+sort -k1,1 -k2,2n regions.bed > regions_sorted.bed
+
+# Merge overlapping regions
+bedtools merge -i regions_sorted.bed
+
+# region_A (0-100) and region_B (50-150) overlap => merged to (0-150)
+# region_C (200-300) does not overlap => stays separate</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Find Intersecting Intervals</h3>
+                <pre><code># Create a second BED file representing "queries"
+echo -e "ref1\t75\t125\tquery_1\nref1\t250\t275\tquery_2" > queries.bed
+
+# Find overlaps between the two BED files
+bedtools intersect -a regions_sorted.bed -b queries.bed
+
+# Show which original regions overlap (report both entries)
+bedtools intersect -a regions_sorted.bed -b queries.bed -wa -wb</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Convert GTF to BED</h3>
+                <pre><code># Extract gene features from GTF and convert to BED format
+# GTF is 1-based, BED is 0-based, so we subtract 1 from the start
+awk '$3=="gene" {OFS="\t"; print $1, $4-1, $5, $9}' $DATA/annotation/mini_ref.gtf
+
+# Extract exon features as a BED file
+awk '$3=="exon" {OFS="\t"; print $1, $4-1, $5}' $DATA/annotation/mini_ref.gtf > exons.bed
+
+# Count how many exons overlap with our regions
+bedtools intersect -a exons.bed -b regions_sorted.bed | wc -l</code></pre>
+                <div class="info-box tip">
+                    <strong>Tip: When to Use bedtools</strong>
+                    <p>bedtools is essential for: finding which genes overlap with ChIP-seq peaks, extracting reads from specific regions, computing coverage, and many other interval-based operations.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================ -->
+        <!-- Coordinate Systems Reference     -->
+        <!-- ================================ -->
+        <section id="coordinates">
+            <h2>Coordinate Systems Reference</h2>
+            <p>One of the most common sources of confusion in bioinformatics is the difference between 0-based and 1-based coordinate systems.</p>
+
+            <div class="info-box note">
+                <strong>0-Based vs 1-Based Coordinates</strong>
+                <table class="schedule-table">
+                    <tr><th>System</th><th>First Base</th><th>End Position</th><th>Formats</th></tr>
+                    <tr><td>0-based, half-open</td><td>0</td><td>Exclusive (not included)</td><td>BED, BAM (internal)</td></tr>
+                    <tr><td>1-based, closed</td><td>1</td><td>Inclusive (included)</td><td>SAM, VCF, GTF/GFF</td></tr>
+                </table>
+                <p><strong>Example:</strong> The first 10 bases of a chromosome:</p>
+                <ul>
+                    <li>BED: <code>chr1  0  10</code> (start=0, end=10 exclusive)</li>
+                    <li>GTF: <code>chr1  1  10</code> (start=1, end=10 inclusive)</li>
+                </ul>
+                <p>Both represent the same region! When converting between formats, adjust the start position by +1 or -1.</p>
+            </div>
+
+            <div class="info-box note">
+                <strong>Format Summary</strong>
+                <table class="schedule-table">
+                    <tr><th>Format</th><th>Stores</th><th>Binary?</th><th>Coordinates</th><th>Key Tool</th></tr>
+                    <tr><td>FASTA</td><td>Sequences</td><td>No</td><td>N/A</td><td>seqkit</td></tr>
+                    <tr><td>FASTQ</td><td>Reads + Quality</td><td>No</td><td>N/A</td><td>seqkit</td></tr>
+                    <tr><td>SAM/BAM</td><td>Alignments</td><td>BAM=yes</td><td>1-based</td><td>samtools</td></tr>
+                    <tr><td>VCF</td><td>Variants</td><td>No</td><td>1-based</td><td>bcftools</td></tr>
+                    <tr><td>GTF/GFF</td><td>Annotations</td><td>No</td><td>1-based</td><td>awk/grep</td></tr>
+                    <tr><td>BED</td><td>Intervals</td><td>No</td><td>0-based</td><td>bedtools</td></tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============ -->
+        <!-- Exercises     -->
+        <!-- ============ -->
+        <section id="exercises">
+            <h2>Exercises</h2>
+            <p>Try these exercises on your own using the commands and tools you have learned.</p>
+
+            <div class="card">
+                <h3>Exercise 1: FASTA</h3>
+                <p>How many sequences are in <code>$DATA/reference/mini_ref.fasta</code>? What is the total number of bases?</p>
+                <p><em>Hint: Use <code>seqkit stats</code> or <code>grep -c "^&gt;"</code></em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: FASTQ</h3>
+                <p>What is the average read length in <code>$DATA/fastq/sample_R1.fastq</code>? Do both R1 and R2 have the same number of reads?</p>
+                <p><em>Hint: Use <code>seqkit stats -a</code></em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 3: SAM/BAM</h3>
+                <p>How many mapped reads are in <code>$DATA/bam/sample.bam</code>? What percentage of reads are properly paired?</p>
+                <p><em>Hint: Use <code>samtools flagstat</code></em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 4: VCF</h3>
+                <p>How many SNPs passed quality filters in <code>$DATA/vcf/sample.vcf</code>? Which chromosome has the most variants?</p>
+                <p><em>Hint: Use <code>bcftools view -v snps -f PASS</code> and <code>grep</code> + <code>cut</code> + <code>uniq -c</code></em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 5: GTF</h3>
+                <p>How many protein-coding genes are annotated in <code>$DATA/annotation/mini_ref.gtf</code>? How many exons does gene_A have?</p>
+                <p><em>Hint: Use <code>grep</code> and <code>awk</code> to filter by feature type and gene_id</em></p>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 6: BED</h3>
+                <p>Create a BED file from the exons in the GTF file, then use <code>bedtools merge</code> to find overlapping exons. Are there any overlapping exons in the annotation?</p>
+                <p><em>Hint: Extract exons with <code>awk</code>, convert coordinates (subtract 1 from start), sort, then merge</em></p>
+            </div>
+        </section>
+
+        <!-- ========= -->
+        <!-- Summary   -->
+        <!-- ========= -->
+        <section id="summary">
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Loaded bioinformatics modules (<code>seqkit</code>, <code>samtools</code>, <code>bcftools</code>, <code>bedtools</code>) on the Ibex HPC cluster</li>
+                <li>Explored <strong>FASTA</strong> reference sequences with <code>seqkit</code> and Linux commands</li>
+                <li>Explored <strong>FASTQ</strong> reads, understood the 4-line format, quality scores, and paired-end structure</li>
+                <li>Explored <strong>SAM/BAM</strong> alignment files using <code>samtools</code>, including flags and CIGAR strings</li>
+                <li>Explored <strong>VCF</strong> variant calls with Linux commands and <code>bcftools</code> filtering</li>
+                <li>Explored <strong>GTF/GFF</strong> gene annotations and understood the column structure</li>
+                <li>Created and manipulated <strong>BED</strong> interval files using <code>bedtools</code></li>
+                <li>Learned the difference between 0-based and 1-based coordinate systems</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab3.html">Lab 3 &ndash; Data Retrieval from Public Repositories</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>
