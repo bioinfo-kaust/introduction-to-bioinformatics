@@ -1,0 +1,25 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+##INFO=<ID=TYPE,Number=1,Type=String,Description="Variant type: SNP, INS, DEL">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##contig=<ID=ref1,length=500>
+##contig=<ID=ref2,length=300>
+##contig=<ID=ref3,length=200>
+##reference=mini_ref.fasta
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE1	SAMPLE2
+ref1	25	rs001	A	G	99	PASS	DP=45;AF=0.50;TYPE=SNP	GT:DP:GQ	0/1:22:99	0/0:23:99
+ref1	78	rs002	C	T	85	PASS	DP=38;AF=0.25;TYPE=SNP	GT:DP:GQ	0/1:20:85	0/1:18:80
+ref1	150	rs003	G	GA	92	PASS	DP=52;AF=0.45;TYPE=INS	GT:DP:GQ	0/1:28:92	1/1:24:88
+ref1	230	rs004	TAG	T	78	PASS	DP=30;AF=0.35;TYPE=DEL	GT:DP:GQ	0/1:15:78	0/0:15:75
+ref1	310	.	T	C	45	LowQual	DP=12;AF=0.15;TYPE=SNP	GT:DP:GQ	0/1:6:45	0/0:6:40
+ref1	420	rs005	G	A	99	PASS	DP=60;AF=0.80;TYPE=SNP	GT:DP:GQ	1/1:32:99	0/1:28:95
+ref2	55	rs006	A	T	95	PASS	DP=40;AF=0.50;TYPE=SNP	GT:DP:GQ	0/1:20:95	0/1:20:90
+ref2	120	rs007	C	CGA	88	PASS	DP=35;AF=0.40;TYPE=INS	GT:DP:GQ	0/1:18:88	0/0:17:85
+ref2	200	rs008	ATCG	A	72	PASS	DP=28;AF=0.30;TYPE=DEL	GT:DP:GQ	0/1:14:72	0/1:14:70
+ref3	45	rs009	G	C	99	PASS	DP=55;AF=0.60;TYPE=SNP	GT:DP:GQ	0/1:30:99	1/1:25:95
+ref3	90	rs010	T	A	80	PASS	DP=33;AF=0.45;TYPE=SNP	GT:DP:GQ	0/1:16:80	0/1:17:78
+ref3	160	.	A	G	35	LowQual	DP=10;AF=0.10;TYPE=SNP	GT:DP:GQ	0/0:5:35	0/1:5:30
