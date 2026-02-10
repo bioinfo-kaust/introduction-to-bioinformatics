@@ -27,7 +27,7 @@
         <div class="info-box note">
             <strong>Learning Objectives</strong>
             <ul>
-                <li>Build a STAR genome index for <em>Arabidopsis thaliana</em></li>
+                <li>Build a STAR genome index for <em>E. coli</em></li>
                 <li>Align WGS reads to the reference genome using STAR</li>
                 <li>Use samtools to inspect and analyze BAM files</li>
                 <li>Visualize alignments using IGV (Integrative Genomics Viewer)</li>
@@ -36,10 +36,10 @@
 
         <div class="info-box">
             <strong>Prerequisites</strong>
-            <p>This lab uses the SRR1770413 dataset and the <em>Arabidopsis thaliana</em> reference genome that you downloaded and processed in Labs 3&ndash;4. Make sure you have:</p>
+            <p>This lab uses the SRR1770413 dataset and the <em>E. coli</em> reference genome that you downloaded and processed in Labs 3&ndash;4. Make sure you have:</p>
             <ul>
                 <li>Trimmed FASTQ files in <code>trimmed_data/</code></li>
-                <li>The <em>Arabidopsis</em> reference genome and GTF annotation in <code>references/</code></li>
+                <li>The <em>Escherichia coli str. K-12 substr. MG1655</em> reference genome and GTF annotation in <code>references/</code></li>
             </ul>
         </div>
 
@@ -102,24 +102,24 @@ ls -la</code></pre>
 
             <div class="step" data-step="4">
                 <h3>Verify reference files are available</h3>
-                <pre><code># Check that the Arabidopsis reference genome and annotation are in place
-ls -lh references/ncbi_dataset/data/GCF_000001735.4/
+                <pre><code># Check that the E. coli reference genome and annotation are in place
+ls -lh references/ncbi_dataset/data/GCF_0000058451.2/
 
 # You should see:
-#   GCF_000001735.4_TAIR10.1_genomic.fna   - genome FASTA
-#   genomic.gtf                             - gene annotation (GTF)</code></pre>
+#   GCF_000005845.2_ASM584v2_genomic.fna  - genome FASTA
+#   genomic.gtf                           - gene annotation (GTF)</code></pre>
             </div>
 
             <div class="step" data-step="5">
                 <h3>Build the STAR index</h3>
-                <pre><code># Build STAR index for the Arabidopsis genome
+                <pre><code># Build STAR index for the Escherichia coli str. K-12 substr. MG1655
 STAR --runMode genomeGenerate \
     --runThreadN 8 \
     --genomeDir references/star_index \
-    --genomeFastaFiles references/ncbi_dataset/data/GCF_000001735.4/GCF_000001735.4_TAIR10.1_genomic.fna \
-    --sjdbGTFfile references/ncbi_dataset/data/GCF_000001735.4/genomic.gtf \
+    --genomeFastaFiles references/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna \
+    --sjdbGTFfile references/ncbi_dataset/data/GCF_000005845.2/genomic.gtf \
     --sjdbOverhang 149 \
-    --genomeSAindexNbases 13
+    --genomeSAindexNbases 11
 
 # Check the generated index files
 ls -lh references/star_index/</code></pre>
@@ -127,7 +127,7 @@ ls -lh references/star_index/</code></pre>
                 <div class="info-box note">
                     <strong>Key Parameters</strong>
                     <ul>
-                        <li><code>--sjdbOverhang 149</code>: ReadLength &minus; 1 (our reads are 150 bp)</li>
+                        <li><code>--sjdbOverhang 149</code>: ReadLength &minus; 1 (our reads are 150 bp, try to change it to 298, why?)</li>
                         <li><code>--genomeSAindexNbases 13</code>: Scaled down from the default (14) for the Arabidopsis genome (~120 Mb). The formula is <code>min(14, log2(GenomeLength)/2 - 1)</code></li>
                         <li><code>--sjdbGTFfile</code>: Provides gene annotation so STAR is aware of known splice junctions</li>
                     </ul>
@@ -145,8 +145,7 @@ ls -lh references/star_index/</code></pre>
 # Align paired-end reads
 STAR --runThreadN 8 \
     --genomeDir references/star_index \
-    --readFilesIn trimmed_data/SRR1770413_1.trimmed.fastq.gz trimmed_data/SRR1770413_2.trimmed.fastq.gz \
-    --readFilesCommand zcat \
+    --readFilesIn trimmed_data/SRR1770413_1.trimmed.fastq trimmed_data/SRR1770413_2.trimmed.fastq \
     --outFileNamePrefix alignment/SRR1770413_ \
     --outSAMtype BAM SortedByCoordinate \
     --outSAMattributes Standard
@@ -242,9 +241,35 @@ samtools view -c -f 2 alignment/SRR1770413_Aligned.sortedByCoord.out.bam</code><
 
         <section>
             <h2>Part 6: Visualizing Alignments in IGV</h2>
-            <p>IGV (Integrative Genomics Viewer) allows you to visually inspect read alignments across the genome.</p>
+            <p>IGV (Integrative Genomics Viewer) allows you to visually inspect read alignments across the genome. You need to install IGV on your <strong>local machine</strong> (laptop/desktop), not on Ibex.</p>
 
             <div class="step" data-step="11">
+                <h3>Install IGV on your local machine</h3>
+
+                <h4 style="margin-top:1rem; padding:0.4rem 0.8rem; background:#e8f4fd; border-left:4px solid #2196F3;">Windows</h4>
+                <ol>
+                    <li>Go to the IGV downloads page: <a href="https://igv.org/doc/desktop/#DownloadPage/" target="_blank">https://igv.org/doc/desktop/#DownloadPage/</a></li>
+                    <li>Download the <strong>Windows installer</strong> (<code>IGV_Win_x.x.x-WithJava-installer.exe</code>) &ndash; this version bundles Java so you do not need to install it separately</li>
+                    <li>Run the installer and follow the on-screen prompts</li>
+                    <li>Once installed, launch IGV from the Start Menu</li>
+                </ol>
+
+                <h4 style="margin-top:1rem; padding:0.4rem 0.8rem; background:#e8f8e8; border-left:4px solid #4CAF50;">macOS</h4>
+                <ol>
+                    <li>Go to the IGV downloads page: <a href="https://igv.org/doc/desktop/#DownloadPage/" target="_blank">https://igv.org/doc/desktop/#DownloadPage/</a></li>
+                    <li>Download the <strong>macOS App</strong> (<code>IGV_MacApp_x.x.x-WithJava.zip</code>) &ndash; this version bundles Java so you do not need to install it separately</li>
+                    <li>Unzip the downloaded file</li>
+                    <li>Drag <strong>IGV.app</strong> into your <code>/Applications</code> folder</li>
+                    <li>On first launch, you may need to right-click &rarr; Open (or go to System Settings &rarr; Privacy &amp; Security &rarr; allow IGV) to bypass Gatekeeper</li>
+                </ol>
+
+                <div class="info-box tip">
+                    <strong>Memory Tip</strong>
+                    <p>IGV defaults to a limited amount of memory. If you are loading large BAM files, increase the memory allocation: go to View &rarr; Preferences &rarr; General and set the memory limit to at least <strong>2 GB</strong>.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="12">
                 <h3>Transfer files to your local machine</h3>
                 <p>To use IGV on your laptop, you need to download the BAM file, its index, and the reference files. Open a <strong>new terminal on your local machine</strong>:</p>
                 <pre><code># Create a local directory for the files
@@ -256,26 +281,21 @@ scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/alignment/SRR
 scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/alignment/SRR1770413_Aligned.sortedByCoord.out.bam.bai .
 
 # Download reference genome and annotation
-scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/ncbi_dataset/data/GCF_000001735.4/GCF_000001735.4_TAIR10.1_genomic.fna .
-scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/ncbi_dataset/data/GCF_000001735.4/genomic.gtf .</code></pre>
-            </div>
-
-            <div class="step" data-step="12">
-                <h3>Load files in IGV</h3>
-                <p>Open IGV on your local machine and follow these steps:</p>
-                <ol>
-                    <li><strong>Load the reference genome:</strong> Genomes &rarr; Load Genome from File &rarr; select <code>GCF_000001735.4_TAIR10.1_genomic.fna</code></li>
-                    <li><strong>Load the gene annotation:</strong> File &rarr; Load from File &rarr; select <code>genomic.gtf</code></li>
-                    <li><strong>Load the BAM file:</strong> File &rarr; Load from File &rarr; select <code>SRR1770413_Aligned.sortedByCoord.out.bam</code></li>
-                </ol>
-
-                <div class="info-box tip">
-                    <strong>Alternative: Use the built-in A. thaliana genome</strong>
-                    <p>IGV includes <em>A. thaliana</em> (TAIR10) as a built-in genome. Go to Genomes &rarr; select <strong>A. thaliana (TAIR10)</strong> from the dropdown. Note that chromosome names must match between your BAM file and the selected genome.</p>
-                </div>
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna .
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/ncbi_dataset/data/GCF_000005845.2/genomic.gtf .</code></pre>
             </div>
 
             <div class="step" data-step="13">
+                <h3>Load files in IGV</h3>
+                <p>Open IGV on your local machine and follow these steps:</p>
+                <ol>
+                    <li><strong>Load the reference genome:</strong> Genomes &rarr; Load Genome from File &rarr; select <code>GCF_000005845.2_ASM584v2_genomic.fna</code></li>
+                    <li><strong>Load the gene annotation:</strong> File &rarr; Load from File &rarr; select <code>genomic.gtf</code></li>
+                    <li><strong>Load the BAM file:</strong> File &rarr; Load from File &rarr; select <code>SRR1770413_Aligned.sortedByCoord.out.bam</code></li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="14">
                 <h3>Explore alignments in IGV</h3>
                 <p>Try navigating to these regions:</p>
                 <ol>
@@ -304,13 +324,12 @@ scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/nc
                 <h3>Exercise 2: Exploring Specific Regions</h3>
                 <p>Use samtools to investigate reads in a specific genomic region:</p>
                 <pre><code># View reads mapping to a specific region
-samtools view alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003070.9:1000000-1010000 | head -5
-
+samtools view alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_000913.3.9:1000000-1010000 | head -5
 # Count reads in that region
-samtools view -c alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003070.9:1000000-1010000
+samtools view -c alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_000913.3.9:1000000-1010000
 
 # How many high-quality reads (MAPQ >= 30) are in the region?
-samtools view -c -q 30 alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003070.9:1000000-1010000</code></pre>
+samtools view -c -q 30 alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_000913.3.9:1000000-1010000</code></pre>
                 <p>Navigate to the same region in IGV. Do you see any interesting patterns in the read coverage or alignment?</p>
             </div>
         </section>
@@ -319,7 +338,7 @@ samtools view -c -q 30 alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003
             <h2>Summary</h2>
             <p>In this lab, you have:</p>
             <ul>
-                <li>Built a STAR genome index for <em>Arabidopsis thaliana</em></li>
+                <li>Built a STAR genome index for <em>E. coli</em></li>
                 <li>Aligned WGS reads to the reference genome using STAR</li>
                 <li>Reviewed alignment statistics using STAR logs and samtools</li>
                 <li>Explored BAM file contents with samtools</li>
