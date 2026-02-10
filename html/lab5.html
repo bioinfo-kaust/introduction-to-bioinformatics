@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 1: Linux Basics - Introduction to Applied Bioinformatics 2026</title>
+    <title>Lab 5: Reference Genome Alignment</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -15,9 +15,355 @@
                 <li><a href="../index.html">Home</a></li>
                 <li><a href="schedule.html">Schedule</a></li>
                 <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
                 <li><a href="setup.html">Setup</a></li>
             </ul>
         </div>
     </nav>
 
-</body></html>
+    <main>
+        <h1>Lab 5: Reference Genome Alignment</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Build a STAR genome index for <em>Arabidopsis thaliana</em></li>
+                <li>Align WGS reads to the reference genome using STAR</li>
+                <li>Use samtools to inspect and analyze BAM files</li>
+                <li>Visualize alignments using IGV (Integrative Genomics Viewer)</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>Prerequisites</strong>
+            <p>This lab uses the SRR1770413 dataset and the <em>Arabidopsis thaliana</em> reference genome that you downloaded and processed in Labs 3&ndash;4. Make sure you have:</p>
+            <ul>
+                <li>Trimmed FASTQ files in <code>trimmed_data/</code></li>
+                <li>The <em>Arabidopsis</em> reference genome and GTF annotation in <code>references/</code></li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>Why STAR?</h2>
+            <div class="card">
+                <h3>STAR (Spliced Transcripts Alignment to a Reference)</h3>
+                <ul>
+                    <li><strong>Fast:</strong> Uses uncompressed suffix arrays for rapid alignment</li>
+                    <li><strong>Accurate:</strong> High mapping accuracy for short reads</li>
+                    <li><strong>Flexible:</strong> Outputs BAM files compatible with downstream tools</li>
+                    <li><strong>Splice-aware:</strong> Can align reads across exon-exon junctions (primarily designed for RNA-seq)</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <p>STAR has many parameters and options. Always refer to the <a href="https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf">STAR manual</a> for details.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 1: Setup on Ibex</h2>
+            <p>Connect to Ibex, start an interactive session, and load the tools needed for this lab.</p>
+
+            <div class="step" data-step="1">
+                <h3>Connect and start an interactive session</h3>
+                <pre><code># Connect to Ibex
+ssh username@ilogin.ibex.kaust.edu.sa
+
+# Start an interactive session (never run analyses on login nodes!)
+srun --pty --time=6:00:00 --mem=32G --cpus-per-task=8 bash</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Load required modules</h3>
+                <pre><code># Load bioinformatics tools
+module load star samtools
+
+# Verify tools are loaded
+module list</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Navigate to your workspace</h3>
+                <pre><code># Navigate to your workshop directory
+cd /ibex/scratch/$USER/workshop
+
+# Create directories for this lab
+mkdir -p alignment
+mkdir -p references/star_index
+
+# Verify your workspace
+ls -la</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Build STAR Genome Index</h2>
+            <p>Before alignment, STAR requires a pre-built genome index. This step only needs to be done once per reference genome.</p>
+
+            <div class="step" data-step="4">
+                <h3>Verify reference files are available</h3>
+                <pre><code># Check that the Arabidopsis reference genome and annotation are in place
+ls -lh references/ncbi_dataset/data/GCF_000001735.4/
+
+# You should see:
+#   GCF_000001735.4_TAIR10.1_genomic.fna   - genome FASTA
+#   genomic.gtf                             - gene annotation (GTF)</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Build the STAR index</h3>
+                <pre><code># Build STAR index for the Arabidopsis genome
+STAR --runMode genomeGenerate \
+    --runThreadN 8 \
+    --genomeDir references/star_index \
+    --genomeFastaFiles references/ncbi_dataset/data/GCF_000001735.4/GCF_000001735.4_TAIR10.1_genomic.fna \
+    --sjdbGTFfile references/ncbi_dataset/data/GCF_000001735.4/genomic.gtf \
+    --sjdbOverhang 149 \
+    --genomeSAindexNbases 13
+
+# Check the generated index files
+ls -lh references/star_index/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Key Parameters</strong>
+                    <ul>
+                        <li><code>--sjdbOverhang 149</code>: ReadLength &minus; 1 (our reads are 150 bp)</li>
+                        <li><code>--genomeSAindexNbases 13</code>: Scaled down from the default (14) for the Arabidopsis genome (~120 Mb). The formula is <code>min(14, log2(GenomeLength)/2 - 1)</code></li>
+                        <li><code>--sjdbGTFfile</code>: Provides gene annotation so STAR is aware of known splice junctions</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Align Reads with STAR</h2>
+
+            <div class="step" data-step="6">
+                <h3>Align the SRR1770413 sample</h3>
+                <pre><code>cd /ibex/scratch/$USER/workshop
+
+# Align paired-end reads
+STAR --runThreadN 8 \
+    --genomeDir references/star_index \
+    --readFilesIn trimmed_data/SRR1770413_1.trimmed.fastq.gz trimmed_data/SRR1770413_2.trimmed.fastq.gz \
+    --readFilesCommand zcat \
+    --outFileNamePrefix alignment/SRR1770413_ \
+    --outSAMtype BAM SortedByCoordinate \
+    --outSAMattributes Standard
+
+# Check output files
+ls -lh alignment/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Key Parameters</strong>
+                    <ul>
+                        <li><code>--readFilesCommand zcat</code>: Required when input files are gzip-compressed</li>
+                        <li><code>--outSAMtype BAM SortedByCoordinate</code>: Output a coordinate-sorted BAM file directly</li>
+                        <li><code>--outFileNamePrefix</code>: Prefix for all output files</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box note">
+                <strong>Troubleshooting</strong>
+                <ul>
+                    <li>If STAR does not finish normally, review <code>alignment/SRR1770413_Log.out</code> for error messages</li>
+                    <li>Ensure you have enough memory allocated (32 GB recommended for Arabidopsis)</li>
+                    <li>If you get a <code>zcat</code> error, try <code>--readFilesCommand "gunzip -c"</code> instead</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Understanding STAR Output</h2>
+
+            <div class="step" data-step="7">
+                <h3>Review the alignment log</h3>
+                <pre><code># View the alignment summary
+cat alignment/SRR1770413_Log.final.out</code></pre>
+
+                <p>Key metrics to look for:</p>
+                <ul>
+                    <li><strong>Uniquely mapped reads %</strong> &ndash; Should be high for good quality WGS data</li>
+                    <li><strong>% of reads mapped to multiple loci</strong> &ndash; High values may indicate repetitive sequences</li>
+                    <li><strong>% of reads unmapped</strong> &ndash; Should be relatively low</li>
+                </ul>
+
+                <div class="card">
+                    <h3>Expected Alignment Metrics</h3>
+                    <table class="schedule-table">
+                        <tr><th>Metric</th><th>Good</th><th>Acceptable</th><th>Investigate</th></tr>
+                        <tr><td>Uniquely mapped %</td><td>&gt;80%</td><td>70&ndash;80%</td><td>&lt;70%</td></tr>
+                        <tr><td>Multi-mapped %</td><td>&lt;10%</td><td>10&ndash;20%</td><td>&gt;20%</td></tr>
+                        <tr><td>Unmapped %</td><td>&lt;5%</td><td>5&ndash;15%</td><td>&gt;15%</td></tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: Investigating the BAM File with samtools</h2>
+
+            <div class="step" data-step="8">
+                <h3>Index the BAM file</h3>
+                <pre><code># Index the BAM file (required for IGV and region queries)
+samtools index alignment/SRR1770413_Aligned.sortedByCoord.out.bam
+
+# Verify the index was created
+ls -lh alignment/*.bai</code></pre>
+            </div>
+
+            <div class="step" data-step="9">
+                <h3>Get alignment statistics</h3>
+                <pre><code># Quick alignment summary
+samtools flagstat alignment/SRR1770413_Aligned.sortedByCoord.out.bam</code></pre>
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>Explore the BAM file</h3>
+                <pre><code># View BAM header (reference sequences and program info)
+samtools view -H alignment/SRR1770413_Aligned.sortedByCoord.out.bam | head -20
+
+# View the first 5 aligned reads
+samtools view alignment/SRR1770413_Aligned.sortedByCoord.out.bam | head -5
+
+# Count total aligned reads
+samtools view -c alignment/SRR1770413_Aligned.sortedByCoord.out.bam
+
+# Count properly paired reads
+samtools view -c -f 2 alignment/SRR1770413_Aligned.sortedByCoord.out.bam</code></pre>
+            </div>
+
+            <div class="info-box note">
+                <strong>Samtools Flags</strong>
+                <p>To understand SAM flags, visit <a href="https://broadinstitute.github.io/picard/explain-flags.html">Explain SAM Flags</a>. Check the desired boxes and use the resulting number with <code>-f</code> (include) or <code>-F</code> (exclude) in samtools.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 6: Visualizing Alignments in IGV</h2>
+            <p>IGV (Integrative Genomics Viewer) allows you to visually inspect read alignments across the genome.</p>
+
+            <div class="step" data-step="11">
+                <h3>Transfer files to your local machine</h3>
+                <p>To use IGV on your laptop, you need to download the BAM file, its index, and the reference files. Open a <strong>new terminal on your local machine</strong>:</p>
+                <pre><code># Create a local directory for the files
+mkdir -p ~/workshop_igv
+cd ~/workshop_igv
+
+# Download BAM and index
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/alignment/SRR1770413_Aligned.sortedByCoord.out.bam .
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/alignment/SRR1770413_Aligned.sortedByCoord.out.bam.bai .
+
+# Download reference genome and annotation
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/ncbi_dataset/data/GCF_000001735.4/GCF_000001735.4_TAIR10.1_genomic.fna .
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/scratch/$USER/workshop/references/ncbi_dataset/data/GCF_000001735.4/genomic.gtf .</code></pre>
+            </div>
+
+            <div class="step" data-step="12">
+                <h3>Load files in IGV</h3>
+                <p>Open IGV on your local machine and follow these steps:</p>
+                <ol>
+                    <li><strong>Load the reference genome:</strong> Genomes &rarr; Load Genome from File &rarr; select <code>GCF_000001735.4_TAIR10.1_genomic.fna</code></li>
+                    <li><strong>Load the gene annotation:</strong> File &rarr; Load from File &rarr; select <code>genomic.gtf</code></li>
+                    <li><strong>Load the BAM file:</strong> File &rarr; Load from File &rarr; select <code>SRR1770413_Aligned.sortedByCoord.out.bam</code></li>
+                </ol>
+
+                <div class="info-box tip">
+                    <strong>Alternative: Use the built-in A. thaliana genome</strong>
+                    <p>IGV includes <em>A. thaliana</em> (TAIR10) as a built-in genome. Go to Genomes &rarr; select <strong>A. thaliana (TAIR10)</strong> from the dropdown. Note that chromosome names must match between your BAM file and the selected genome.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="13">
+                <h3>Explore alignments in IGV</h3>
+                <p>Try navigating to these regions:</p>
+                <ol>
+                    <li>Use the search box to navigate to a specific chromosome or gene</li>
+                    <li>Zoom in until individual reads become visible</li>
+                    <li>Right-click on the alignment track to explore display options (e.g., color by strand, sort by mapping quality)</li>
+                    <li>Look for regions with high and low coverage</li>
+                    <li>Check if there are any areas with mismatches or soft-clipped reads</li>
+                </ol>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+
+            <div class="card">
+                <h3>Exercise 1: Alignment Analysis</h3>
+                <ol>
+                    <li>What is the uniquely mapped reads percentage from <code>SRR1770413_Log.final.out</code>?</li>
+                    <li>How many reads map to multiple locations? Why might this occur in a plant genome?</li>
+                    <li>What is the total number of properly paired reads? (Hint: use <code>samtools flagstat</code>)</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: Exploring Specific Regions</h3>
+                <p>Use samtools to investigate reads in a specific genomic region:</p>
+                <pre><code># View reads mapping to a specific region
+samtools view alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003070.9:1000000-1010000 | head -5
+
+# Count reads in that region
+samtools view -c alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003070.9:1000000-1010000
+
+# How many high-quality reads (MAPQ >= 30) are in the region?
+samtools view -c -q 30 alignment/SRR1770413_Aligned.sortedByCoord.out.bam NC_003070.9:1000000-1010000</code></pre>
+                <p>Navigate to the same region in IGV. Do you see any interesting patterns in the read coverage or alignment?</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Built a STAR genome index for <em>Arabidopsis thaliana</em></li>
+                <li>Aligned WGS reads to the reference genome using STAR</li>
+                <li>Reviewed alignment statistics using STAR logs and samtools</li>
+                <li>Explored BAM file contents with samtools</li>
+                <li>Visualized read alignments in IGV</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>
