@@ -208,6 +208,10 @@ cat alignment/SRR1770413_Log.final.out</code></pre>
                 <pre><code># Index the BAM file (required for IGV and region queries)
 samtools index alignment/SRR1770413_Aligned.sortedByCoord.out.bam
 
+# Create a FASTA index (needed to extract specific regions)
+samtools faidx references/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna
+
+
 # Verify the index was created
 ls -lh alignment/*.bai</code></pre>
             </div>
