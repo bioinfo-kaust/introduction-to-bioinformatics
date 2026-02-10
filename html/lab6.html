@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 1: Linux Basics - Introduction to Applied Bioinformatics 2026</title>
+    <title>Lab 6: BLAST Command Line - Bioinformatics 2026</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -15,9 +15,574 @@
                 <li><a href="../index.html">Home</a></li>
                 <li><a href="schedule.html">Schedule</a></li>
                 <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
                 <li><a href="setup.html">Setup</a></li>
             </ul>
         </div>
     </nav>
 
-</body></html>
+    <main>
+        <h1>Lab 6: BLAST Command Line</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Understand the different BLAST programs and when to use each</li>
+                <li>Extract a query sequence from a reference genome</li>
+                <li>Run <code>blastn</code> against the NCBI nt database from the command line</li>
+                <li>Interpret BLAST output columns and assess hit quality</li>
+                <li>Filter BLAST results by e-value, percent identity, and query coverage</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>Prerequisites</strong>
+            <p>This lab uses the <em>E. coli</em> K-12 reference genome downloaded in Lab 3. Make sure you have:</p>
+            <ul>
+                <li>The genome FASTA at <code>references/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna</code></li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>What is BLAST?</h2>
+            <div class="card">
+                <h3>Basic Local Alignment Search Tool</h3>
+                <p>BLAST finds regions of similarity between biological sequences. It compares a <strong>query</strong> sequence against a <strong>database</strong> of sequences and returns statistically significant matches (hits).</p>
+            </div>
+
+            <div class="card">
+                <h3>BLAST Programs</h3>
+                <table class="schedule-table">
+                    <tr><th>Program</th><th>Query</th><th>Database</th><th>Use Case</th></tr>
+                    <tr><td><code>blastn</code></td><td>Nucleotide</td><td>Nucleotide</td><td>Find similar DNA/RNA sequences</td></tr>
+                    <tr><td><code>blastp</code></td><td>Protein</td><td>Protein</td><td>Find similar protein sequences</td></tr>
+                    <tr><td><code>blastx</code></td><td>Nucleotide (translated)</td><td>Protein</td><td>Find protein hits for a DNA query</td></tr>
+                    <tr><td><code>tblastn</code></td><td>Protein</td><td>Nucleotide (translated)</td><td>Find DNA sequences encoding a protein</td></tr>
+                    <tr><td><code>tblastx</code></td><td>Nucleotide (translated)</td><td>Nucleotide (translated)</td><td>Compare DNA via translated sequences</td></tr>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <p>In this lab we will use <code>blastn</code> to search nucleotide sequences against the NCBI <strong>nt</strong> (nucleotide collection) database.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 1: Setup on Ibex</h2>
+            <p>Connect to Ibex, start an interactive session, and load the tools needed for this lab.</p>
+
+            <div class="step" data-step="1">
+                <h3>Connect and start an interactive session</h3>
+                <pre><code># Connect to Ibex
+ssh username@ilogin.ibex.kaust.edu.sa
+
+# Start an interactive session
+srun --pty --time=3:00:00 --mem=16G --cpus-per-task=8 bash</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Load required modules</h3>
+                <pre><code># Load BLAST+ and samtools
+module load blast samtools
+
+# Verify BLAST is available
+blastn -version
+
+# Verify samtools is available
+samtools --version | head -1</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Navigate to your workspace</h3>
+                <pre><code># Navigate to your workshop directory
+cd /ibex/scratch/$USER/workshop
+
+# Create a directory for BLAST results
+mkdir -p blast_results
+
+# Verify your workspace
+ls -la</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Check the NCBI nt database</h3>
+                <pre><code># The NCBI nt database is pre-installed on the cluster
+# Verify it is accessible
+ls /biocorelab/BIX/resources/databases/NCBI/nt*  | head -10
+
+# Get database information
+blastdbcmd -db /biocorelab/BIX/resources/databases/NCBI/nt -info</code></pre>
+
+                <div class="info-box note">
+                    <strong>About the nt Database</strong>
+                    <p>The NCBI <strong>nt</strong> (nucleotide collection) database contains all GenBank, EMBL, and DDBJ nucleotide sequences. It is very large (hundreds of GB) and is pre-installed on the cluster so you do not need to download it yourself.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Preparing a Query Sequence</h2>
+            <p>We will extract a region from the <em>E. coli</em> genome to use as our BLAST query.</p>
+
+            <div class="step" data-step="6">
+                <h3>Extract a query sequence</h3>
+                <pre><code>
+mkdir blast_results
+# Extract a 500 bp region from the E. coli genome
+samtools faidx \
+    references/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna \
+    NC_000913.3:1000-1500 > blast_results/query.fasta
+
+# View the query sequence
+cat blast_results/query.fasta</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Tip</strong>
+                    <p>You can extract any region you like. The format is <code>sequence_name:start-end</code>. Check the <code>.fai</code> index file for available sequence names.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Running BLAST</h2>
+
+            <div class="step" data-step="7">
+                <h3>Run blastn with default output</h3>
+                <pre><code># Run blastn against the nt database (default pairwise output)
+blastn \
+    -query blast_results/query.fasta \
+    -db /biocorelab/BIX/resources/databases/NCBI/nt \
+    -num_threads 8 \
+    -max_target_seqs 10 \
+    -evalue 1e-5 \
+    -out blast_results/results_default.txt
+
+# View the results
+cat blast_results/results_default.txt</code></pre>
+
+                <div class="info-box note">
+                    <strong>Key Parameters</strong>
+                    <ul>
+                        <li><code>-query</code>: Your input FASTA file</li>
+                        <li><code>-db</code>: Path to the BLAST database</li>
+                        <li><code>-num_threads 8</code>: Use 8 CPU threads for faster searching</li>
+                        <li><code>-max_target_seqs 10</code>: Report up to 10 target sequences</li>
+                        <li><code>-evalue 1e-5</code>: Only report hits with e-value &le; 0.00001</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Run blastn with tabular output (format 6)</h3>
+                <p>Tabular output is much easier to parse and filter programmatically.</p>
+                <pre><code># Run blastn with tabular output format
+blastn \
+    -query blast_results/query.fasta \
+    -db /biocorelab/BIX/resources/databases/NCBI/nt \
+    -num_threads 8 \
+    -max_target_seqs 50 \
+    -evalue 1e-5 \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle" \
+    -out blast_results/results_tabular.txt
+
+# View the results
+cat blast_results/results_tabular.txt</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Understanding BLAST Output</h2>
+
+            <div class="step" data-step="9">
+                <h3>Output format 6 columns</h3>
+                <p>Each row in the tabular output represents one alignment (hit). The columns we requested are:</p>
+
+                <table class="schedule-table">
+                    <tr><th>Column</th><th>Field</th><th>Description</th></tr>
+                    <tr><td>1</td><td><code>qseqid</code></td><td>Query sequence ID</td></tr>
+                    <tr><td>2</td><td><code>sseqid</code></td><td>Subject (hit) sequence ID</td></tr>
+                    <tr><td>3</td><td><code>pident</code></td><td>Percentage of identical matches</td></tr>
+                    <tr><td>4</td><td><code>length</code></td><td>Alignment length</td></tr>
+                    <tr><td>5</td><td><code>mismatch</code></td><td>Number of mismatches</td></tr>
+                    <tr><td>6</td><td><code>gapopen</code></td><td>Number of gap openings</td></tr>
+                    <tr><td>7</td><td><code>qstart</code></td><td>Start position in the query</td></tr>
+                    <tr><td>8</td><td><code>qend</code></td><td>End position in the query</td></tr>
+                    <tr><td>9</td><td><code>sstart</code></td><td>Start position in the subject</td></tr>
+                    <tr><td>10</td><td><code>send</code></td><td>End position in the subject</td></tr>
+                    <tr><td>11</td><td><code>evalue</code></td><td>Expect value (lower = more significant)</td></tr>
+                    <tr><td>12</td><td><code>bitscore</code></td><td>Bit score (higher = better alignment)</td></tr>
+                    <tr><td>13</td><td><code>stitle</code></td><td>Subject title (species/description)</td></tr>
+                </table>
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>Key metrics to evaluate hits</h3>
+
+                <div class="card">
+                    <h3>E-value (Expect Value)</h3>
+                    <p>The number of alignments with this score expected to occur by chance in a database of this size. <strong>Lower is better.</strong></p>
+                    <table class="schedule-table">
+                        <tr><th>E-value</th><th>Interpretation</th></tr>
+                        <tr><td>&lt; 1e-50</td><td>Excellent match &ndash; almost certainly homologous</td></tr>
+                        <tr><td>1e-50 to 1e-10</td><td>Good match &ndash; likely homologous</td></tr>
+                        <tr><td>1e-10 to 1e-5</td><td>Moderate match &ndash; worth investigating</td></tr>
+                        <tr><td>&gt; 1e-5</td><td>Weak match &ndash; may not be biologically meaningful</td></tr>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Percent Identity &amp; Alignment Length</h3>
+                    <p>A hit with 99% identity over 50 bp is very different from 99% over 500 bp. Always consider both values together. A meaningful hit should cover a substantial portion of your query.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: Filtering BLAST Results</h2>
+
+            <div class="step" data-step="11">
+                <h3>Filter at search time (BLAST parameters)</h3>
+                <p>You can apply filters directly when running BLAST:</p>
+                <pre><code># Stricter search: high identity, low e-value, with query coverage
+blastn \
+    -query blast_results/query.fasta \
+    -db /biocorelab/BIX/resources/databases/NCBI/nt \
+    -num_threads 8 \
+    -max_target_seqs 50 \
+    -evalue 1e-20 \
+    -perc_identity 90 \
+    -qcov_hsp_perc 80 \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle" \
+    -out blast_results/results_filtered.txt
+
+# View filtered results
+cat blast_results/results_filtered.txt
+
+# Count the number of hits
+wc -l blast_results/results_filtered.txt</code></pre>
+
+                <div class="info-box note">
+                    <strong>Filter Parameters</strong>
+                    <ul>
+                        <li><code>-evalue 1e-20</code>: Only report hits with e-value &le; 1e-20</li>
+                        <li><code>-perc_identity 90</code>: Only report hits with &ge; 90% identity</li>
+                        <li><code>-qcov_hsp_perc 80</code>: Only report hits where the alignment covers &ge; 80% of the query</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="12">
+                <h3>Post-filter results with <code>awk</code></h3>
+                <p>You can also filter the tabular output after the search. This is useful when you want to apply different thresholds without re-running BLAST.</p>
+                <pre><code># From the unfiltered results, keep only hits with:
+#   - percent identity >= 95 (column 3)
+#   - alignment length >= 200 (column 4)
+#   - e-value <= 1e-30 (column 11)
+awk -F'\t' '$3 >= 95 && $4 >= 200 && $11 <= 1e-30' \
+    blast_results/results_tabular.txt > blast_results/results_strict.txt
+
+# View the strictly filtered results
+cat blast_results/results_strict.txt
+
+# Count hits
+wc -l blast_results/results_strict.txt</code></pre>
+            </div>
+
+            <div class="step" data-step="13">
+                <h3>Sort results by different criteria</h3>
+                <pre><code># Sort by bit score (highest first, column 12)
+sort -t$'\t' -k12,12 -nr blast_results/results_tabular.txt | head -10
+
+# Sort by e-value (lowest first, column 11)
+sort -t$'\t' -k11,11 -g blast_results/results_tabular.txt | head -10
+
+# Sort by percent identity (highest first, column 3)
+sort -t$'\t' -k3,3 -nr blast_results/results_tabular.txt | head -10</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 6: BLAST Output Formats</h2>
+            <p>BLAST supports multiple output formats. Here are the most commonly used:</p>
+
+            <div class="card">
+                <table class="schedule-table">
+                    <tr><th>Format</th><th>Flag</th><th>Description</th></tr>
+                    <tr><td>Pairwise</td><td><code>-outfmt 0</code></td><td>Default human-readable pairwise alignments</td></tr>
+                    <tr><td>Tabular</td><td><code>-outfmt 6</code></td><td>Tab-separated, no headers (easy to parse)</td></tr>
+                    <tr><td>Tabular with headers</td><td><code>-outfmt 7</code></td><td>Tab-separated with comment lines</td></tr>
+                    <tr><td>CSV</td><td><code>-outfmt 10</code></td><td>Comma-separated values</td></tr>
+                    <tr><td>XML</td><td><code>-outfmt 5</code></td><td>BLAST XML (for programmatic parsing)</td></tr>
+                </table>
+            </div>
+
+            <div class="info-box tip">
+                <strong>Custom Columns</strong>
+                <p>With formats 6, 7, and 10 you can specify exactly which columns to include. Run <code>blastn -help</code> and look for the <code>-outfmt</code> section to see all available fields (e.g., <code>qcovs</code>, <code>ssciname</code>, <code>staxid</code>).</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 7: Downloading E. coli Sequences &amp; Building Local BLAST Databases</h2>
+            <p>So far we have searched against the large pre-installed nt database. In this section you will download <em>E. coli</em> protein, RNA, and CDS sequences from NCBI and build your own local BLAST databases to run <code>blastn</code> and <code>blastp</code> searches.</p>
+
+            <div class="step" data-step="14">
+                <h3>Load the NCBI datasets tool</h3>
+                <pre><code># Load the NCBI datasets CLI
+module load ncbi_datasets_tools
+
+# Verify it is available
+datasets --version</code></pre>
+            </div>
+
+            <div class="step" data-step="15">
+                <h3>Download E. coli protein, RNA, and CDS sequences</h3>
+                <pre><code>cd /ibex/scratch/$USER/workshop
+
+# Download protein, RNA (transcript), and CDS sequences for E. coli K-12
+datasets download genome accession GCF_000005845.2 \
+    --include protein,rna,cds
+
+# Unzip the downloaded archive
+unzip -o ncbi_dataset.zip -d ecoli_sequences
+
+# See what was downloaded
+ls -lh ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Downloaded Files</strong>
+                    <ul>
+                        <li><code>protein.faa</code> &ndash; All annotated protein sequences (amino acid FASTA)</li>
+                        <li><code>rna.fna</code> &ndash; All annotated RNA/transcript sequences (nucleotide FASTA)</li>
+                        <li><code>cds_from_genomic.fna</code> &ndash; Coding DNA sequences extracted from the genome (nucleotide FASTA)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="16">
+                <h3>Inspect the downloaded sequences</h3>
+                <pre><code># How many protein sequences?
+grep -c "^>" ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/protein.faa
+
+# How many RNA sequences?
+grep -c "^>" ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/rna.fna
+
+# How many CDS sequences?
+grep -c "^>" ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/cds_from_genomic.fna
+
+# Preview the first few entries
+head -4 ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/protein.faa
+head -4 ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/cds_from_genomic.fna</code></pre>
+            </div>
+
+            <div class="step" data-step="17">
+                <h3>Build local BLAST databases</h3>
+                <pre><code># Create a directory for the local databases
+mkdir -p blast_db
+
+# Build a nucleotide database from the CDS sequences
+makeblastdb \
+    -in ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/cds_from_genomic.fna \
+    -dbtype nucl \
+    -out blast_db/ecoli_cds \
+    -title "E. coli K-12 CDS"
+
+# Build a protein database from the protein sequences
+makeblastdb \
+    -in ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/protein.faa \
+    -dbtype prot \
+    -out blast_db/ecoli_protein \
+    -title "E. coli K-12 Proteins"
+
+# Verify the databases were created
+blastdbcmd -db blast_db/ecoli_cds -info
+blastdbcmd -db blast_db/ecoli_protein -info</code></pre>
+
+                <div class="info-box note">
+                    <strong>makeblastdb Parameters</strong>
+                    <ul>
+                        <li><code>-in</code>: Input FASTA file</li>
+                        <li><code>-dbtype nucl</code>: Nucleotide database (use <code>prot</code> for protein)</li>
+                        <li><code>-out</code>: Output database name/path</li>
+                        <li><code>-title</code>: Human-readable database title</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="18">
+                <h3>Run blastn against the local CDS database</h3>
+                <p>Search the same genomic query against the <em>E. coli</em> CDS database to identify which gene(s) overlap with your query region.</p>
+                <pre><code># blastn: nucleotide query vs nucleotide CDS database
+blastn \
+    -query blast_results/query.fasta \
+    -db blast_db/ecoli_cds \
+    -num_threads 8 \
+    -evalue 1e-5 \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle" \
+    -out blast_results/results_vs_cds.txt
+
+# View results
+cat blast_results/results_vs_cds.txt</code></pre>
+
+                <div class="info-box tip">
+                    <strong>What to look for</strong>
+                    <p>The hits tell you which coding sequences overlap with the genomic region you extracted. Check the <code>stitle</code> column to see the gene name and product description.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="19">
+                <h3>Run blastp against the local protein database</h3>
+                <p>For a protein search, we need a protein query. We will extract one from the downloaded protein FASTA file.</p>
+                <pre><code># Extract the first protein sequence as a query
+head -20 ecoli_sequences/ncbi_dataset/data/GCF_000005845.2/protein.faa | \
+    awk '/^>/{if(n++) exit} {print}' > blast_results/protein_query.fasta
+
+# View the protein query
+cat blast_results/protein_query.fasta
+
+# Run blastp: protein query vs protein database
+blastp \
+    -query blast_results/protein_query.fasta \
+    -db blast_db/ecoli_protein \
+    -num_threads 8 \
+    -evalue 1e-5 \
+    -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle" \
+    -out blast_results/results_blastp.txt
+
+# View results
+cat blast_results/results_blastp.txt</code></pre>
+            </div>
+
+            <div class="step" data-step="20">
+                <h3>Run blastp against the NCBI nr database (optional)</h3>
+                <p>You can also search the protein query against the pre-installed NCBI <strong>nr</strong> (non-redundant protein) database to find homologs in other organisms.</p>
+                <pre><code># Check if the nr database is available
+blastdbcmd -db /biocorelab/BIX/resources/databases/NCBI/nr -info
+
+# blastp against nr
+blastp \
+    -query blast_results/protein_query.fasta \
+    -db /biocorelab/BIX/resources/databases/NCBI/nr \
+    -num_threads 8 \
+    -max_target_seqs 20 \
+    -evalue 1e-10 \
+    -outfmt "6 qseqid sseqid pident length evalue ssciname stitle" \
+    -out blast_results/results_blastp_nr.txt
+
+# View results - which organisms have similar proteins?
+cat blast_results/results_blastp_nr.txt</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+
+            <div class="card">
+                <h3>Exercise 1: BLAST a Different Region</h3>
+                <p>Extract a 1000 bp region from a different part of the <em>E. coli</em> genome and BLAST it against nt.</p>
+                <ol>
+                    <li>Use <code>samtools faidx</code> to extract the region <code>NC_000913.3:500000-501000</code></li>
+                    <li>Run <code>blastn</code> with tabular output</li>
+                    <li>How many hits have &ge; 99% identity? What organisms are they from?</li>
+                </ol>
+                <details>
+                    <summary>Hint</summary>
+                    <pre><code>samtools faidx \
+    references/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna \
+    NC_000913.3:500000-501000 > blast_results/query2.fasta
+
+blastn \
+    -query blast_results/query2.fasta \
+    -db /biocorelab/BIX/resources/databases/NCBI/nt \
+    -num_threads 8 \
+    -max_target_seqs 50 \
+    -evalue 1e-5 \
+    -outfmt "6 qseqid sseqid pident length evalue stitle" \
+    -out blast_results/results_exercise1.txt
+
+# Filter for >= 99% identity
+awk -F'\t' '$3 >= 99' blast_results/results_exercise1.txt</code></pre>
+                </details>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: Include Taxonomy Information</h3>
+                <p>Re-run the original BLAST search but add taxonomy columns to the output. Which species have the most hits?</p>
+                <details>
+                    <summary>Hint</summary>
+                    <pre><code>blastn \
+    -query blast_results/query.fasta \
+    -db /biocorelab/BIX/resources/databases/NCBI/nt \
+    -num_threads 8 \
+    -max_target_seqs 50 \
+    -evalue 1e-5 \
+    -outfmt "6 qseqid sseqid pident length evalue ssciname staxid stitle" \
+    -out blast_results/results_taxonomy.txt
+
+# Count hits per species (column 6)
+cut -f6 blast_results/results_taxonomy.txt | sort | uniq -c | sort -rn</code></pre>
+                </details>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 3: Compare E-value Thresholds</h3>
+                <p>Run the same query three times with different e-value thresholds: <code>1e-5</code>, <code>1e-20</code>, and <code>1e-50</code>. How does the number of hits change? What types of organisms disappear as you become more stringent?</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Learned the different BLAST programs and their use cases</li>
+                <li>Extracted a query sequence from the <em>E. coli</em> reference genome</li>
+                <li>Run <code>blastn</code> against the NCBI nt database on the command line</li>
+                <li>Interpreted tabular BLAST output and key metrics (e-value, percent identity, bit score)</li>
+                <li>Filtered results using both BLAST parameters and <code>awk</code></li>
+                <li>Explored different output formats and custom column options</li>
+                <li>Downloaded <em>E. coli</em> protein, RNA, and CDS sequences using NCBI <code>datasets</code></li>
+                <li>Built local BLAST databases with <code>makeblastdb</code></li>
+                <li>Run <code>blastn</code> and <code>blastp</code> against local databases</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>
