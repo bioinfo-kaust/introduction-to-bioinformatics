@@ -55,7 +55,7 @@
                 <tr><th>Task</th></tr>
                 <tr><td>Task 1: Environment Setup</td></tr>
                 <tr><td>Task 2: Data Acquisition (Reference Genome + SRA Download + Subsampling)</td></tr>
-                <tr><td>Task 3: Processing &amp; QC (FastQC, fastp, BWA alignment)</td></tr>
+                <tr><td>Task 3: Processing &amp; QC (FastQC, fastp, STAR alignment)</td></tr>
                 <tr><td>Task 4: Visualization &amp; Interpretation (IGV)</td></tr>
             </table>
         </div>
@@ -70,9 +70,9 @@
 
 srun --pty --time=4:00:00 --mem=32G --cpus-per-task=8 bash
 
-module load sratoolkit fastqc fastp bwa samtools seqkit
+module load sratoolkit fastqc fastp star samtools seqkit
 
-cd /ibex/user/$USER/workshop
+cd /ibex/scratch/$USER/workshop
 mkdir -p capstone/{raw_data,subsampled,references,trimmed,alignment,qc_reports,results}
 cd capstone</code></pre>
                 <p>This creates a self-contained project directory with subdirectories for each analysis stage.</p>
@@ -85,7 +85,7 @@ prefetch --version
 fasterq-dump --version
 fastqc --version
 fastp --version
-bwa 2>&1 | head -3
+STAR 2>&1 | head -3
 samtools --version | head -2
 seqkit version
 
@@ -153,10 +153,7 @@ ls -lh *.fastq</code></pre>
 
                 <div class="info-box note">
                     <strong>Download Time</strong>
-                    <p>The <code>prefetch</code> step downloads ~20-30 GB per sample and may take 30-60 minutes depending on network speed. The <code>fasterq-dump</code> conversion also takes time as each sample expands to ~65 GB of FASTQ data. If the instructor has pre-downloaded the data, you may copy it instead:</p>
-                    <pre><code># Alternative: copy pre-downloaded data (instructor will provide path)
-# cp /path/to/shared/capstone_data/SRR7890824*.fastq raw_data/
-# cp /path/to/shared/capstone_data/SRR7890827*.fastq raw_data/</code></pre>
+                    <p>The <code>prefetch</code> step downloads ~20-30 GB per sample and may take 30-60 minutes depending on network speed. The <code>fasterq-dump</code> conversion also takes time as each sample expands to ~65 GB of FASTQ data.</p>
                 </div>
             </div>
 
@@ -255,18 +252,7 @@ bwa index references/genome.fa</code></pre>
 
             <div class="step" data-step="4">
                 <h3>Step 4: Align reads with BWA</h3>
-                <pre><code>REF=references/genome.fa
-
-# Align tumor sample
-bwa mem -t 8 -R '@RG\tID:tumor\tSM:HCC1395\tPL:ILLUMINA' \
-    $REF trimmed/tumor_R1.trimmed.fastq trimmed/tumor_R2.trimmed.fastq \
-    | samtools sort -@ 4 -o alignment/tumor.sorted.bam
-
-# Align normal sample
-bwa mem -t 8 -R '@RG\tID:normal\tSM:HCC1395BL\tPL:ILLUMINA' \
-    $REF trimmed/normal_R1.trimmed.fastq trimmed/normal_R2.trimmed.fastq \
-    | samtools sort -@ 4 -o alignment/normal.sorted.bam</code></pre>
-                <p>The <code>-R</code> flag adds a read group header, which identifies each sample in downstream analyses. The output is piped directly to <code>samtools sort</code> to produce a coordinate-sorted BAM file.</p>
+                
             </div>
 
             <div class="step" data-step="5">
