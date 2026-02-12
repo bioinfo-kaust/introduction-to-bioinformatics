@@ -53,7 +53,7 @@ srun --pty --time=3:00:00 --mem=8G --cpus-per-task=4 bash</code></pre>
             <div class="step" data-step="2">
                 <h3>Load required modules</h3>
                 <pre><code># Load bioinformatics tools
-module load sra-tools
+module load sratoolkit
 module load seqkit
 
 # Verify tools are loaded
@@ -173,17 +173,6 @@ ls -la</code></pre>
                 <pre><code>cd /ibex/scratch/$USER/workshop/raw_data</code></pre>
             </div>
 
-            <div class="step" data-step="2">
-                <h3>Configure SRA toolkit</h3>
-                <pre><code># Configure SRA toolkit (first time only)
-# This opens an interactive configuration screen
-vdb-config --interactive
-
-# Or set up with defaults (non-interactive)
-# mkdir -p ~/ncbi/public
-# vdb-config --root -s "/repository/user/main/public/root=$HOME/ncbi/public"</code></pre>
-            </div>
-
             <div class="step" data-step="3">
                 <h3>Download using prefetch &amp; convert to fastq using fasterq-dump</h3>
                 <pre><code># Download the .sra file (faster and more reliable than direct FASTQ download)
@@ -191,41 +180,6 @@ prefetch SRR1770413
 
 #Convert .sra file to fastq format
 fasterq-dump --split-files SRR1770413/SRR1770413.sra</code></pre>
-                <div class="info-box tip">
-                    <strong>Tip: Downloading Multiple SRA Files at Once</strong>
-                    <p>When you need to download many SRA files, create a text file with one SRR accession per line and pass it to <code>prefetch</code>:</p>
-                    <pre><code># Create a file with multiple SRR accessions (one per line)
-nano srr_list.txt
-#add the following to the file:
-SRR1770413
-SRR1770414
-SRR1770415
-#save the file
-
-# Download all accessions from the list
-prefetch --option-file srr_list.txt
-
-# Convert all downloaded .sra files to FASTQ
-for sra in SRR*/; do
-    fasterq-dump --split-files "${sra}"/*.sra
-done</code></pre>
-                    <p>This is much more efficient than running <code>prefetch</code> one at a time, especially for large studies with dozens of samples.</p>
-                </div>
-            </div>
-
-            <div class="step" data-step="5">
-                <h3>Compress and verify</h3>
-                <pre><code># Compress FASTQ files to save disk space
-gzip SRR1770413_1.fastq SRR1770413_2.fastq
-
-# Check file sizes
-ls -lh *.fastq.gz
-
-#Once you confirm the fastq files are generated, remove the sra files to save space
-rm -r SRR1770413
-
-# Get detailed statistics with seqkit
-seqkit stats *.fastq.gz</code></pre>
             </div>
 
         </section>
@@ -244,12 +198,14 @@ seqkit stats *.fastq.gz</code></pre>
             <p>NCBI provides the <code>datasets</code> command-line tool &ndash; a modern, fast way to download genomes, annotations, and gene data directly from the NCBI database.</p>
 
             <div class="step" data-step="ncbi-ds-1">
-                <h3>Load the NCBI datasets tool</h3>
-                <pre><code># Load the NCBI datasets module on Ibex
-module load ncbi_datasets
+                <h3>Get the NCBI datasets tool</h3>
+                <pre><code># 
+wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+#Make the tool (datasets) executable
+chmod +x datasets
 
 # Verify installation
-datasets version</code></pre>
+datasets --help</code></pre>
             </div>
 
             <div class="step" data-step="ncbi-ds-2">
@@ -422,8 +378,8 @@ ls -lh</code></pre>
 # Subsample to 100,000 reads for faster processing
 # -n 100000: number of reads to keep
 # -s 42: random seed for reproducibility
-seqkit sample -n 100000 -s 42 raw_data/SRR1770413_1.fastq.gz -o raw_data/ecoli_R1.fastq.gz
-seqkit sample -n 100000 -s 42 raw_data/SRR1770413_2.fastq.gz -o raw_data/ecoli_R2.fastq.gz</code></pre>
+seqkit sample -n 100000 -s 42 raw_data/SRR1770413_1.fastq -o raw_data/SRR1770413_subsample_1.fastq
+seqkit sample -n 100000 -s 42 raw_data/SRR1770413_2.fastq -o raw_data/SRR1770413_subsample_2.fastq</code></pre>
             </div>
 
             <div class="step" data-step="2">

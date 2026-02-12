@@ -77,7 +77,10 @@ module list</code></pre>
 cd /ibex/scratch/$USER
 
 # Create directories for this lab
-mkdir -p workshop/qc
+mkdir workshop
+cd workshop
+mkdir -p qc/fastqc_raw qc/fastpM<:></:>
+mkdir -p trimmed_data 
 cd workshop
 
 
@@ -195,6 +198,18 @@ fastqc trimmed_data/*.fastq.gz -o qc/fastqc_trimmed -t 4
 #Compare a sample before and after
 #browse the HTML reports</code></pre>
             </div>
+
+            <div class="step" data-step="8">
+                <h3>Generate MultiQC reports</h3>
+                <pre><code>cd ~/genomics
+    
+    # Generate a comprehensive report with all QC data
+    multiqc qc_reports/ -o qc_reports -n multiqc_all --force
+    
+    # Open the combined report in the browser:
+    qc_reports/multiqc_all.html</code></pre>
+            </div>
+    
         </section>
         
         <section>

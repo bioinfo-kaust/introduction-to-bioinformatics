@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization with Jupyter & Seaborn - Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">The Bioinformatics Platform - KAUST</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Additional Lab on Data Visualization with Jupyter & Seaborn (Optional)</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Launch Jupyter notebooks on Ibex</li>
+                <li>Create plots with Python seaborn and matplotlib</li>
+                <li>Visualize QC metrics and genomic data</li>
+                <li>Use AI-assisted coding for plot generation</li>
+            </ul>
+        </div>
+
+        <section>
+            <div class="info-box note">
+            <h2>Part 1: Setup on Ibex</h2>
+            <ol>
+            <li>Start an interactive session</li>
+            <li>Create a conda environment to install and manage software packages (First time only)</li>
+            <li>Activate the conda environment to enable the python setup</li>
+        </ol>
+    </div>
+            <div class="step" data-step="1">
+                <h3>Start an interactive session and activate your environment</h3>
+                <pre><code>ssh username@ilogin.ibex.kaust.edu.sa
+srun --pty --time=2:00:00 --mem=4G --cpus-per-task=2 bash
+
+module load anaconda3
+
+cd /ibex/user/$USER/workshop</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <strong>Create bioinf conda environment for package management, first time only</strong>
+                <p>If you have not created the <code>bioinfo</code> environment, set it up now:</p>
+                <pre><code>conda create -n bioinfo python=3.11 -y
+
+conda activate bioinfo
+pip install jupyter seaborn matplotlib pandas numpy</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <strong>Activate bioinf conda environment for package management</strong>
+                <pre><code>conda activate bioinfo
+                    <code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Launch Jupyter</h2>
+            <p>Jupyter notebooks provide an interactive environment for writing code, generating plots, and documenting your analysis all in one place.</p>
+
+            <div class="step" data-step="1">
+                <h3>Start Jupyter on the compute node</h3>
+                <pre><code># Start Jupyter notebook on Ibex
+jupyter notebook --no-browser --port=8888</code></pre>
+                <p>Jupyter will print a URL containing a token. Keep this terminal open.</p>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Set up an SSH tunnel from your local machine</h3>
+                <pre><code># In a separate terminal on your local machine, set up SSH tunnel:
+ssh -N -L 8888:compute-node:8888 username@ilogin.ibex.kaust.edu.sa
+
+# Open http://localhost:8888 in your browser</code></pre>
+            </div>
+
+            <div class="info-box note">
+                <strong>Understanding the SSH Tunnel</strong>
+                <p>Jupyter runs on a compute node inside the Ibex cluster, which is not directly accessible from your laptop. The SSH tunnel creates a secure connection that forwards traffic from your local port 8888 to the compute node's port 8888 through the Ibex login node.</p>
+                <p>To find your compute node name, look at your terminal prompt after running <code>srun</code>. It will show something like <code>username@gpu-b11</code> or <code>username@cn502</code>. Replace <code>compute-node</code> in the SSH command with that hostname.</p>
+                <p>You can also run <code>hostname</code> on the compute node to confirm the name.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Basic Plotting - Per-Base Quality Scores</h2>
+            <p>Create a new Jupyter notebook and add the following cells to visualize simulated FastQC-like per-base quality data.</p>
+
+            <div class="step" data-step="1">
+                <h3>Import libraries and generate quality data</h3>
+                <pre><code>import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Example: Visualize FastQC-like per-base quality
+import numpy as np
+positions = np.arange(1, 151)
+qualities = np.random.normal(35, 3, 150)
+qualities[:10] = np.random.normal(30, 5, 10)  # lower quality at start
+
+plt.figure(figsize=(12, 4))
+plt.bar(positions, qualities, color=['green' if q > 28 else 'orange' if q > 20 else 'red' for q in qualities])
+plt.xlabel('Position in Read')
+plt.ylabel('Quality Score')
+plt.title('Per-Base Quality Scores')
+plt.axhline(y=28, color='green', linestyle='--', alpha=0.5)
+plt.axhline(y=20, color='orange', linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.savefig('results/quality_plot.png', dpi=150)
+plt.show()</code></pre>
+                <p>This creates a bar plot colored by quality thresholds: green for good (>28), orange for acceptable (20-28), and red for poor (&lt;20).</p>
+            </div>
+
+            <div class="info-box tip">
+                <strong>Make sure your results directory exists</strong>
+                <p>Run <code>mkdir -p results</code> in a notebook cell or terminal before saving plots.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Visualizing Alignment Statistics</h2>
+            <p>Stacked bar charts are useful for showing the proportion of mapped versus unmapped reads across samples.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create an alignment statistics plot</h3>
+                <pre><code># Create sample alignment data
+samples = ['ecoli_rep1', 'ecoli_rep2', 'ecoli_rep3']
+mapped = [95.2, 93.8, 96.1]
+unmapped = [4.8, 6.2, 3.9]
+
+df = pd.DataFrame({'Sample': samples, 'Mapped %': mapped, 'Unmapped %': unmapped})
+
+plt.figure(figsize=(8, 5))
+df.set_index('Sample').plot(kind='bar', stacked=True, color=['#2ecc71', '#e74c3c'])
+plt.ylabel('Percentage')
+plt.title('Alignment Statistics')
+plt.legend(loc='lower right')
+plt.tight_layout()
+plt.savefig('results/alignment_stats.png', dpi=150)
+plt.show()</code></pre>
+                <p>The green bars represent successfully mapped reads, while red bars show unmapped reads. Ideally, the green portion should dominate.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: GC Content Distribution</h2>
+            <p>GC content distributions help identify contamination or bias in your sequencing data. A deviation from the expected GC content for your organism suggests a problem.</p>
+
+            <div class="step" data-step="1">
+                <h3>Plot a GC content histogram with KDE</h3>
+                <pre><code># Simulate GC content distribution
+gc_values = np.random.normal(0.50, 0.05, 10000)
+
+plt.figure(figsize=(8, 5))
+sns.histplot(gc_values, bins=50, kde=True, color='steelblue')
+plt.xlabel('GC Content')
+plt.ylabel('Frequency')
+plt.title('GC Content Distribution')
+plt.axvline(x=0.50, color='red', linestyle='--', label='Expected GC (E. coli ~50%)')
+plt.legend()
+plt.tight_layout()
+plt.savefig('results/gc_distribution.png', dpi=150)
+plt.show()</code></pre>
+                <p>The red dashed line marks the expected GC content for <em>E. coli</em> (~50%). Your distribution should be centered around this value with a smooth, unimodal shape.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 6: Heatmap of Gene Expression</h2>
+            <p>Heatmaps are commonly used to visualize gene expression patterns across samples, making it easy to spot clusters of co-expressed genes or sample outliers.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create a gene expression heatmap</h3>
+                <pre><code># Create a sample gene expression heatmap
+genes = [f'Gene_{i}' for i in range(1, 21)]
+samples_list = ['Sample_1', 'Sample_2', 'Sample_3', 'Control_1', 'Control_2', 'Control_3']
+data = np.random.randn(20, 6)
+
+plt.figure(figsize=(8, 10))
+sns.heatmap(pd.DataFrame(data, index=genes, columns=samples_list),
+            cmap='RdBu_r', center=0, annot=False)
+plt.title('Gene Expression Heatmap')
+plt.tight_layout()
+plt.savefig('results/heatmap.png', dpi=150)
+plt.show()</code></pre>
+                <p>The <code>RdBu_r</code> colormap shows upregulation in red and downregulation in blue, centered at zero. In real data, you would use normalized expression values rather than random numbers.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Using AI Tools for Plot Generation</h2>
+
+            <div class="info-box note">
+                <strong>AI-Assisted Coding for Visualization</strong>
+                <p>AI tools like ChatGPT and Claude can be extremely helpful for generating and customizing plots. Here are some tips for effective use:</p>
+                <ul>
+                    <li><strong>Describe your data clearly:</strong> Tell the AI what columns your DataFrame has, what the data represents, and what kind of plot you want.</li>
+                    <li><strong>Ask for specific customizations:</strong> Request color schemes, axis labels, legends, figure sizes, or specific plot types by name.</li>
+                    <li><strong>Iterate:</strong> Paste your current code and ask the AI to modify it -- for example, "Add error bars" or "Change to a violin plot."</li>
+                    <li><strong>Learn from the output:</strong> Read the generated code carefully to understand matplotlib and seaborn options so you can modify them yourself next time.</li>
+                </ul>
+                <p>Example prompt: "I have a pandas DataFrame with columns 'Sample', 'Mapped_Reads', and 'Unmapped_Reads'. Create a publication-quality stacked bar chart with a clean style, labeled axes, and a legend."</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Customize the Quality Plot</h3>
+                <p>Modify the per-base quality plot from Part 3 to:</p>
+                <ol>
+                    <li>Add a title that includes the sample name</li>
+                    <li>Add a text annotation marking the "good quality" and "poor quality" zones</li>
+                    <li>Save the figure as both PNG and PDF</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: Multi-Panel Figure</h3>
+                <p>Use <code>plt.subplots()</code> to create a 2x2 figure containing:</p>
+                <ol>
+                    <li>Per-base quality (bar plot)</li>
+                    <li>Alignment statistics (stacked bar)</li>
+                    <li>GC content distribution (histogram)</li>
+                    <li>A summary statistics table using <code>plt.table()</code></li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 3: Use Real Data</h3>
+                <p>If you have output from previous labs (FastQC, fastp, or alignment logs), try loading and plotting that data instead of the simulated values used in this lab.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Launched a Jupyter notebook on Ibex via SSH tunneling</li>
+                <li>Created per-base quality plots using matplotlib</li>
+                <li>Visualized alignment statistics with stacked bar charts</li>
+                <li>Plotted GC content distributions with seaborn</li>
+                <li>Generated gene expression heatmaps</li>
+                <li>Learned how to use AI tools for generating and customizing visualizations</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>

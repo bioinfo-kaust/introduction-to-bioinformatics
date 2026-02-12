@@ -27,8 +27,9 @@
         <div class="info-box warning">
             <strong>Prerequisites</strong>
             <ul>
-                <li>An active Ibex account (request via KAUST IT if you don't have one)</li>
+                <li>An active Ibex account (request via KAUST IT if you don't have one), <a href="https://my.ibex.kaust.edu.sa/teams">follow this link</a> (only accessible when using the KAUST network).</li>
                 <li>A laptop with a terminal application and SSH access</li>
+                <li>Practice the Linux commands listed at the end of this page</li>
             </ul>
         </div>
 
@@ -94,8 +95,8 @@ srun --pty --time=4:00:00 --mem=8G --cpus-per-task=4 bash
                 <strong>Ibex File Systems</strong>
                 <table class="schedule-table">
                     <tr><th>Location</th><th>Path</th><th>Purpose</th><th>Quota</th></tr>
-                    <tr><td>Home</td><td><code>/home/username</code></td><td>Scripts, configs (do NOT run jobs here)</td><td>200 GB</td></tr>
-                    <tr><td>Scratch</td><td><code>/ibex/user/username</code></td><td>Analysis work directory</td><td>1.5 TB</td></tr>
+                    <tr><td>Home</td><td><code>/home/$USER</code></td><td>Scripts, configs (do NOT run jobs here)</td><td>200 GB</td></tr>
+                    <tr><td>Scratch</td><td><code>/ibex/scratch/$USER</code></td><td>Analysis work directory (not backed up)</td><td>1.5 TB</td></tr>
                     <tr><td>Project</td><td><code>/ibex/project/...</code></td><td>Shared data</td><td>Varies</td></tr>
                 </table>
             </div>
@@ -136,6 +137,7 @@ module load bedtools
 module load blast+
 module load multiqc
 module load sra-tools
+module laod ncbi_datasets_tools
 
 # Verify tools are loaded
 module list
@@ -144,34 +146,18 @@ module list
 fastqc --version
 samtools --version
 seqkit version</code></pre>
-            </div>
-
-            <div class="step" data-step="3">
-                <h3>Set Up Python Environment (for Day 3)</h3>
-                <pre><code># Load Python and create a conda environment (name it genomics)
-module load anaconda3
-
-# Create workshop environment
-conda create -n genomics python=3.11 -y
-conda activate genomics
-
-# Install visualization packages
-pip install jupyter seaborn matplotlib pandas numpy
-
-# Verify
-python -c "import seaborn; import matplotlib; print('Python packages OK')"</code></pre>
-            </div>
+                </div>
         </section>
 
         <section id="workspace-setup">
             <h2>Step 4: Create Workshop Workspace</h2>
             <pre><code># Navigate to your scratch space
-cd /ibex/user/$USER
+cd /ibex/scratch/$USER
 
 # Create workshop directory structure
 mkdir -p workshop
 cd workshop
-mkdir -p raw_data references trimmed_data qc_reports alignment results logs
+mkdir -p raw_data references trimmed_data qc alignment results blast_results logs 
 
 # Verify structure
 tree</code></pre>
@@ -206,19 +192,6 @@ srun --pty --time=4:00:00 --mem=8G --cpus-per-task=4 bash
 
 # Navigate to workspace
 cd /ibex/user/$USER/workshop</code></pre>
-        </section>
-
-        <section>
-            <h2>Quick Reference: Daily Commands</h2>
-            <pre><code># Activate your environment (run this every time you open a new terminal)
-conda activate genomics
-
-# Navigate to your project directory
-#mkdir ~/genomics #run this the first time you make the folder
-cd ~/genomics
-
-# Deactivate when done
-conda deactivate</code></pre>
         </section>
 
         <section>

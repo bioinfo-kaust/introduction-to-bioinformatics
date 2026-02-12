@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capstone Project: Variant Discovery in Cancer Genomics - Introduction to Applied Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">The Bioinformatics Platform - KAUST</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="lab-header">
+            <h1>Capstone Project: Variant Discovery in Cancer Genomics</h1>
+            <p class="lab-meta">Day 3 Afternoon -- Integrated Analysis Challenge</p>
+            <p style="font-size: 1.3rem; margin-top: 1rem; font-style: italic;">"Can you spot somatic mutations in a breast cancer genome?"</p>
+        </div>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Download sequencing data from NCBI SRA using the SRA Toolkit</li>
+                <li>Apply all learned skills in an integrated analysis</li>
+                <li>Set up a complete analysis project from scratch</li>
+                <li>Process DNA-seq data through the full QC &rarr; alignment &rarr; visualization pipeline</li>
+                <li>Compare tumor and normal samples in IGV to identify genomic variants</li>
+            </ul>
+        </div>
+
+        <div class="info-box warning">
+            <strong>About the Dataset</strong>
+            <p>You will work with whole-genome sequencing (WGS) data from the <strong>SEQC2 Somatic Mutation Benchmark</strong> &mdash; a well-characterized tumor-normal pair used as a community reference standard for cancer variant detection:</p>
+            <table class="schedule-table">
+                <tr><th>Sample</th><th>SRA Accession</th><th>Description</th></tr>
+                <tr><td>Tumor</td><td><code>SRR7890824</code></td><td>HCC1395 &mdash; triple-negative breast cancer cell line</td></tr>
+                <tr><td>Normal</td><td><code>SRR7890827</code></td><td>HCC1395BL &mdash; matched normal B-lymphoblastoid cell line</td></tr>
+            </table>
+            <p style="margin-top:0.5rem;">These are paired-end Illumina WGS datasets. The full files are large (~65 GB each), so we will subsample to <strong>1 million read pairs</strong> for this exercise.</p>
+        </div>
+
+        <div class="info-box warning">
+            <strong>List of Steps</strong>
+            <table class="schedule-table">
+                <tr><th>Task</th></tr>
+                <tr><td>Task 1: Environment Setup</td></tr>
+                <tr><td>Task 2: Data Acquisition (Reference Genome + SRA Download + Subsampling)</td></tr>
+                <tr><td>Task 3: Processing &amp; QC (FastQC, fastp, BWA alignment)</td></tr>
+                <tr><td>Task 4: Visualization &amp; Interpretation (IGV)</td></tr>
+            </table>
+        </div>
+
+        <section>
+            <h2>Task 1: Environment Setup (15 min)</h2>
+            <p>Set up your compute environment and create a clean project directory for the capstone analysis.</p>
+
+            <div class="step" data-step="1">
+                <h3>Log in to Ibex and request an interactive session</h3>
+                <pre><code>ssh username@ilogin.ibex.kaust.edu.sa
+
+srun --pty --time=4:00:00 --mem=32G --cpus-per-task=8 bash
+
+module load sratoolkit fastqc fastp bwa samtools seqkit
+
+cd /ibex/user/$USER/workshop
+mkdir -p capstone/{raw_data,subsampled,references,trimmed,alignment,qc_reports,results}
+cd capstone</code></pre>
+                <p>This creates a self-contained project directory with subdirectories for each analysis stage.</p>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Verify all tools are available</h3>
+                <pre><code># Verify tools
+prefetch --version
+fasterq-dump --version
+fastqc --version
+fastp --version
+bwa 2>&1 | head -3
+samtools --version | head -2
+seqkit version
+
+# Confirm directory structure
+ls -d */</code></pre>
+            </div>
+
+            <div class="info-box tip">
+                <strong>Capstone Best Practice</strong>
+                <p>Keep a log of every command you run. Open a text file and record your commands and observations as you go. This is essential for reproducibility and will help when writing your summary.</p>
+                <pre><code># Start a command log
+echo "# Capstone Project Log - $(date)" > capstone_log.txt
+echo "# ================================" >> capstone_log.txt</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Task 2: Data Acquisition (45 min)</h2>
+            <p>In this task you will download the human reference genome and obtain cancer sequencing data from NCBI's Sequence Read Archive (SRA).</p>
+
+            <div class="step" data-step="1">
+                <h3>Step 1: Download the human reference genome (GRCh38)</h3>
+                <p>Use the NCBI Datasets tool to download the full human reference genome (all chromosomes).</p>
+                <pre><code>cd references
+
+module load ncbi_datasets_tools
+
+# Download the human GRCh38 reference genome
+datasets download genome accession GCF_000001405.40 --include genome
+
+# Unzip and inspect
+unzip ncbi_dataset.zip
+ls ncbi_dataset/data/GCF_000001405.40/
+
+# Create a convenient symlink to the reference FASTA
+ln -s ncbi_dataset/data/GCF_000001405.40/GCF_000001405.40_GRCh38.p14_genomic.fna genome.fa
+
+# Verify the reference
+seqkit stats genome.fa
+
+cd ..</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Step 2: Download sequencing data from NCBI SRA</h3>
+                <p>The SRA Toolkit provides two key commands for downloading data:</p>
+                <ul>
+                    <li><code>prefetch</code> &mdash; downloads the compressed SRA file from NCBI</li>
+                    <li><code>fasterq-dump</code> &mdash; converts the SRA file to FASTQ format</li>
+                </ul>
+                <pre><code>cd raw_data
+
+# Download the tumor sample (HCC1395)
+prefetch SRR7890824 --max-size 70G
+
+# Download the normal sample (HCC1395BL)
+prefetch SRR7890827 --max-size 70G
+
+# Convert SRA files to FASTQ (paired-end reads are split automatically)
+fasterq-dump SRR7890824 --split-files --threads 8
+fasterq-dump SRR7890827 --split-files --threads 8
+
+# Check the downloaded files
+ls -lh *.fastq</code></pre>
+
+                <div class="info-box note">
+                    <strong>Download Time</strong>
+                    <p>The <code>prefetch</code> step downloads ~20-30 GB per sample and may take 30-60 minutes depending on network speed. The <code>fasterq-dump</code> conversion also takes time as each sample expands to ~65 GB of FASTQ data. If the instructor has pre-downloaded the data, you may copy it instead:</p>
+                    <pre><code># Alternative: copy pre-downloaded data (instructor will provide path)
+# cp /path/to/shared/capstone_data/SRR7890824*.fastq raw_data/
+# cp /path/to/shared/capstone_data/SRR7890827*.fastq raw_data/</code></pre>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Step 3: Subsample reads with seqkit</h3>
+                <p>The full datasets contain ~570-600 million read pairs each. To make the analysis feasible in a workshop setting, we will randomly subsample to <strong>1 million read pairs</strong> per sample.</p>
+                <pre><code>cd ../subsampled
+
+# Subsample tumor reads to 1M pairs (use same seed for R1 and R2 to keep pairs in sync)
+seqkit sample -n 1000000 -s 42 ../raw_data/SRR7890824_1.fastq -o tumor_R1.fastq
+seqkit sample -n 1000000 -s 42 ../raw_data/SRR7890824_2.fastq -o tumor_R2.fastq
+
+# Subsample normal reads to 1M pairs
+seqkit sample -n 1000000 -s 42 ../raw_data/SRR7890827_1.fastq -o normal_R1.fastq
+seqkit sample -n 1000000 -s 42 ../raw_data/SRR7890827_2.fastq -o normal_R2.fastq
+
+# Verify the subsampled files
+seqkit stats *.fastq
+
+cd ..</code></pre>
+                <div class="info-box tip">
+                    <strong>Why subsample?</strong>
+                    <p>Subsampling keeps compute time manageable while still providing a realistic end-to-end experience. The <code>-s 42</code> flag sets a random seed so results are reproducible. Using the <strong>same seed</strong> for R1 and R2 ensures that forward and reverse reads stay paired.</p>
+                </div>
+
+                <div class="info-box note">
+                    <strong>Coverage Note</strong>
+                    <p>With 1 million read pairs (~300 Mb of sequence) aligned against the full human genome (~3.1 Gb), the average coverage is very low (~0.1x). This means most positions will have no reads. In a real analysis you would need 30-50x coverage for reliable variant calling. For this exercise, you will still be able to see reads in IGV and practice the full workflow.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Task 3: Processing &amp; QC (1.5 hours)</h2>
+            <p>Apply the full QC &rarr; alignment pipeline that you learned in previous labs. This time you are working with DNA-seq data, so you will use <strong>BWA</strong> (the standard DNA-seq aligner) instead of STAR.</p>
+
+            <div class="step" data-step="1">
+                <h3>Step 1: Run FastQC on subsampled data</h3>
+                <pre><code>cd /ibex/user/$USER/workshop/capstone
+
+# Run FastQC on all subsampled FASTQ files
+fastqc subsampled/*.fastq -o qc_reports -t 4
+
+# Check the generated reports
+ls qc_reports/*.html</code></pre>
+                <p>Open the FastQC HTML reports and note any quality issues: adapter contamination, low-quality bases at read ends, or unusual GC content.</p>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Step 2: Trim reads with fastp</h3>
+                <pre><code># Trim tumor sample
+fastp \
+    --in1 subsampled/tumor_R1.fastq \
+    --in2 subsampled/tumor_R2.fastq \
+    --out1 trimmed/tumor_R1.trimmed.fastq \
+    --out2 trimmed/tumor_R2.trimmed.fastq \
+    --qualified_quality_phred 20 \
+    --length_required 36 \
+    --detect_adapter_for_pe \
+    --thread 4 \
+    --json qc_reports/tumor_fastp.json \
+    --html qc_reports/tumor_fastp.html
+
+# Trim normal sample
+fastp \
+    --in1 subsampled/normal_R1.fastq \
+    --in2 subsampled/normal_R2.fastq \
+    --out1 trimmed/normal_R1.trimmed.fastq \
+    --out2 trimmed/normal_R2.trimmed.fastq \
+    --qualified_quality_phred 20 \
+    --length_required 36 \
+    --detect_adapter_for_pe \
+    --thread 4 \
+    --json qc_reports/normal_fastp.json \
+    --html qc_reports/normal_fastp.html
+
+# Verify trimmed output
+seqkit stats trimmed/*.fastq</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Step 3: Build BWA index for the human genome</h3>
+                <pre><code># Build BWA index (this takes ~30-60 minutes for the full human genome)
+bwa index references/genome.fa</code></pre>
+
+                <div class="info-box note">
+                    <strong>Why BWA instead of STAR?</strong>
+                    <p><strong>STAR</strong> is a splice-aware aligner designed for <strong>RNA-seq</strong> data &mdash; it can align reads across exon-exon junctions. <strong>BWA</strong> is a standard aligner for <strong>DNA-seq</strong> data (WGS/WES) &mdash; it performs ungapped and gapped alignment of reads to a reference genome. Since we are working with whole-genome sequencing data for variant calling, BWA is the appropriate tool.</p>
+                </div>
+
+                <div class="info-box tip">
+                    <strong>While the index builds...</strong>
+                    <p>The BWA index step takes a while for the full human genome. Use this time to review your FastQC and fastp reports. Compare the quality profiles of the tumor vs. normal samples &mdash; do you notice any differences?</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Step 4: Align reads with BWA</h3>
+                <pre><code>REF=references/genome.fa
+
+# Align tumor sample
+bwa mem -t 8 -R '@RG\tID:tumor\tSM:HCC1395\tPL:ILLUMINA' \
+    $REF trimmed/tumor_R1.trimmed.fastq trimmed/tumor_R2.trimmed.fastq \
+    | samtools sort -@ 4 -o alignment/tumor.sorted.bam
+
+# Align normal sample
+bwa mem -t 8 -R '@RG\tID:normal\tSM:HCC1395BL\tPL:ILLUMINA' \
+    $REF trimmed/normal_R1.trimmed.fastq trimmed/normal_R2.trimmed.fastq \
+    | samtools sort -@ 4 -o alignment/normal.sorted.bam</code></pre>
+                <p>The <code>-R</code> flag adds a read group header, which identifies each sample in downstream analyses. The output is piped directly to <code>samtools sort</code> to produce a coordinate-sorted BAM file.</p>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Step 5: Index BAM files and check alignment statistics</h3>
+                <pre><code># Index both BAM files
+samtools index alignment/tumor.sorted.bam
+samtools index alignment/normal.sorted.bam
+
+# Check alignment statistics for tumor
+echo "=== Tumor Sample ==="
+samtools flagstat alignment/tumor.sorted.bam
+
+# Check alignment statistics for normal
+echo "=== Normal Sample ==="
+samtools flagstat alignment/normal.sorted.bam
+
+# View per-chromosome read distribution
+samtools idxstats alignment/tumor.sorted.bam | head -25
+samtools idxstats alignment/normal.sorted.bam | head -25</code></pre>
+                <p>Review the alignment statistics. Key metrics to note: total reads, mapped reads percentage, properly paired reads, and duplicate reads.</p>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Step 6: Generate a comprehensive QC report with MultiQC</h3>
+                <pre><code># Load MultiQC if not already loaded
+module load multiqc
+
+# Run MultiQC on all QC and alignment output
+multiqc qc_reports/ alignment/ -o results -n capstone_multiqc --force
+
+# The report is at results/capstone_multiqc.html
+ls results/capstone_multiqc*</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Task 4: Visualization &amp; Interpretation (1 hour)</h2>
+            <p>Use IGV (Integrative Genomics Viewer) to visually inspect your aligned reads. Load both the tumor and normal BAM files side-by-side and look for differences that might indicate somatic mutations.</p>
+
+            <div class="step" data-step="1">
+                <h3>Step 1: Transfer files for IGV</h3>
+                <p>You need the following files on your local machine (or accessible via a mounted path) to load into IGV:</p>
+                <ul>
+                    <li>Tumor BAM + index: <code>tumor.sorted.bam</code> and <code>tumor.sorted.bam.bai</code></li>
+                    <li>Normal BAM + index: <code>normal.sorted.bam</code> and <code>normal.sorted.bam.bai</code></li>
+                </ul>
+                <pre><code># From your local machine, copy files from Ibex:
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/user/username/workshop/capstone/alignment/tumor.sorted.bam* .
+scp username@ilogin.ibex.kaust.edu.sa:/ibex/user/username/workshop/capstone/alignment/normal.sorted.bam* .</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Alternative: Use Ibex Mount</strong>
+                    <p>If you have Ibex mounted via SMB (see <a href="setup.html">Setup</a>), you can load the files directly from the mounted path without copying.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Step 2: Load data in IGV</h3>
+                <ol>
+                    <li>Open IGV on your local machine</li>
+                    <li>Set the genome to <strong>Human (GRCh38/hg38)</strong> from the genome dropdown</li>
+                    <li>Load <strong>both</strong> BAM files via <em>File &gt; Load from File</em> (select tumor and normal)</li>
+                    <li>The BAM index (<code>.bai</code>) files must be in the same directory as the BAM files</li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Step 3: Find regions with reads</h3>
+                <p>Since we subsampled to 1M reads, coverage is sparse. Use <code>samtools</code> on Ibex to find regions that have reads in both tumor and normal samples:</p>
+                <pre><code># Find regions with reads in the tumor sample
+samtools depth -a alignment/tumor.sorted.bam | awk '$3 > 3' | head -20
+
+# Or list chromosomes with the most reads
+samtools idxstats alignment/tumor.sorted.bam | sort -k3 -nr | head -10</code></pre>
+                <p>Navigate to a region with coverage in IGV by typing coordinates in the search box, for example: <code>chr1:1,000,000-1,100,000</code></p>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Step 4: Compare tumor vs. normal</h3>
+                <p>With both samples loaded, look for differences between the tumor and normal tracks:</p>
+            </div>
+
+            <div class="card">
+                <h3>What to Look For in IGV</h3>
+                <table class="schedule-table">
+                    <tr><th>Feature</th><th>What It Indicates</th><th>How to Spot It</th></tr>
+                    <tr><td>Colored bases in reads</td><td>Mismatches vs. reference</td><td>Bases that differ from the reference are colored (A=green, C=blue, G=orange, T=red)</td></tr>
+                    <tr><td>Consistent mismatches in tumor only</td><td>Potential somatic mutation</td><td>Tumor reads show a variant that is absent from the normal reads at the same position</td></tr>
+                    <tr><td>Consistent mismatches in both</td><td>Germline variant</td><td>Both tumor and normal show the same alternate allele</td></tr>
+                    <tr><td>Coverage changes</td><td>Possible deletion or amplification</td><td>Sudden drops or increases in read depth</td></tr>
+                    <tr><td>Split reads</td><td>Structural variant</td><td>Reads with thin connecting lines spanning a gap</td></tr>
+                    <tr><td>Soft-clipped reads</td><td>Breakpoint of a structural variant</td><td>Reads with colored ends that do not align</td></tr>
+                </table>
+            </div>
+
+            <div class="info-box note">
+                <strong>Variant Allele Frequency (VAF)</strong>
+                <p>When you identify a variant, estimate the variant allele frequency by counting the number of reads supporting the variant versus the total number of reads at that position. For example, if 15 out of 30 reads show an alternate base, the VAF is approximately 50%, suggesting a heterozygous germline variant. A VAF around 20-40% in a tumor sample might indicate a somatic mutation present in a subclone.</p>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Step 5: Document your findings</h3>
+                <p>Take screenshots and record the following for each variant you identify:</p>
+                <ul>
+                    <li>Genomic coordinates (chromosome:position)</li>
+                    <li>Reference allele and alternate allele</li>
+                    <li>Approximate variant allele frequency in tumor and in normal</li>
+                    <li>Total read depth at the position (tumor and normal)</li>
+                    <li>Whether the variant appears somatic (tumor-only) or germline (both samples)</li>
+                    <li>The gene name (if applicable)</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Deliverables</h2>
+            <p>Prepare the following for submission or discussion at the end of the session:</p>
+
+            <div class="card">
+                <h3>1. IGV Screenshots</h3>
+                <p>Provide at least one screenshot from IGV showing a region of interest. The screenshot should clearly show:</p>
+                <ul>
+                    <li>Both tumor and normal tracks visible</li>
+                    <li>The read pileup with colored mismatches</li>
+                    <li>The coverage track</li>
+                    <li>The gene annotation track</li>
+                    <li>The genomic coordinates visible in the navigation bar</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>2. QC Metrics Summary</h3>
+                <p>Summarize the key quality metrics from your analysis:</p>
+                <ul>
+                    <li>Number of raw reads and reads after trimming (tumor and normal)</li>
+                    <li>Percentage of reads passing quality filters</li>
+                    <li>Alignment rate (mapped, properly paired, unmapped)</li>
+                    <li>Any quality concerns observed in FastQC or MultiQC reports</li>
+                    <li>How do the tumor and normal QC metrics compare?</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>3. Variant Description</h3>
+                <p>Write a brief description (3-5 sentences) of any variant you found, including:</p>
+                <ul>
+                    <li>The genomic location and the gene affected (if any)</li>
+                    <li>The type of variant (SNV, insertion, deletion)</li>
+                    <li>The estimated variant allele frequency in tumor vs. normal</li>
+                    <li>Whether it appears to be germline (present in both) or somatic (tumor-only)</li>
+                    <li>Any potential functional significance (coding region, splice site, etc.)</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this capstone project, you have applied all the skills learned throughout the workshop in an integrated analysis:</p>
+            <ul>
+                <li>Set up a complete project directory and compute environment from scratch</li>
+                <li>Downloaded a reference genome using NCBI Datasets</li>
+                <li>Acquired sequencing data from NCBI SRA using the SRA Toolkit (<code>prefetch</code> + <code>fasterq-dump</code>)</li>
+                <li>Subsampled reads to a manageable size with <code>seqkit sample</code></li>
+                <li>Performed quality control with FastQC and trimming with fastp</li>
+                <li>Built a genome index and aligned DNA-seq reads with BWA</li>
+                <li>Generated comprehensive QC reports with MultiQC</li>
+                <li>Used IGV to compare tumor vs. normal samples and search for genomic variants</li>
+                <li>Documented findings in a reproducible manner</li>
+            </ul>
+            <p>Congratulations on completing the Introduction to Applied Bioinformatics workshop!</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Introduction to Applied Bioinformatics 2026 - KAUST</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>
