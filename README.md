@@ -11,10 +11,11 @@ git clone https://github.com/bioinfo-kaust/introduction-to-bioinformatics.git
 
 ## Topics Covered
 
-- **Day 1:** Foundations, Bioinformatics overview, Linux basics & HPC, sequencing technologies, genomic file formats, and hands-on exploration with seqkit and samtools.
-- **Day 2:** Public data repositories, data retrieval, quality control, genome alignment and pairwise alignment
-- **Day 3:** Data visualization, MultiQC reporting, and a capstone project.
+- **Day 1:** Foundations, Bioinformatics overview, Linux basics & HPC, sequencing technologies, genomic file formats, and hands-on exploration with seqkit.
+- **Day 2:** Public data repositories, data retrieval, quality control, and hands on with ncbi dataset, sratoolkit, fastqc, and fastp.
+- **Day 3:** Genome alignment, pairwise alignment, and hands on with practical analysis.
+- **Additional material:** Data visualization, and a capstone project.
 
 ## Tools
 
-FastQC, fastp, SeqKit, STAR, samtools, seaborn, MultiQC, and other standard bioinformatics tools.
+FastQC, fastp, SeqKit, STAR, samtools, MultiQC, sratoolkit, ncbi dataset, blast, and other standard bioinformatics tools.
