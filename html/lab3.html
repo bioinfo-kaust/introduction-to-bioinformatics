@@ -28,7 +28,7 @@
             <strong>Learning Objectives</strong>
             <ul>
                 <li>Navigate NCBI GEO and SRA to find datasets</li>
-                <li>Download sequencing data using sra-tools (<code>prefetch</code>, <code>fasterq-dump</code>)</li>
+                <li>Download raw sequencing data using sra-tools (<code>prefetch</code>, <code>fasterq-dump</code>)</li>
                 <li>Batch-download multiple SRA files using an accession list</li>
                 <li>Download reference genomes from NCBI using the <code>datasets</code> CLI tool</li>
                 <li>Download reference genomes from Ensembl using <code>wget</code></li>
@@ -165,7 +165,7 @@ ls -la</code></pre>
         </section>
 
         <section>
-            <h2>Part 3: Downloading Data with sra-tools</h2>
+            <h2>Part 3: Downloading Raw Sequencing Data with sra-tools</h2>
             <p>The SRA Toolkit provides command-line tools to download and convert SRA data. The two main commands are <code>prefetch</code> (downloads compressed .sra files) and <code>fasterq-dump</code> (converts .sra to FASTQ).</p>
 
             <div class="step" data-step="1">
@@ -198,13 +198,11 @@ fasterq-dump --split-files SRR1770413/SRR1770413.sra</code></pre>
             <p>NCBI provides the <code>datasets</code> command-line tool &ndash; a modern, fast way to download genomes, annotations, and gene data directly from the NCBI database.</p>
 
             <div class="step" data-step="ncbi-ds-1">
-                <h3>Get the NCBI datasets tool</h3>
+                <h3>Get the NCBI datasets tool on Ibex</h3>
                 <pre><code># 
-wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
-#Make the tool (datasets) executable
-chmod +x datasets
+module load ncbi_datasets_tools
 
-# Verify installation
+# Check the help message
 datasets --help</code></pre>
             </div>
 
